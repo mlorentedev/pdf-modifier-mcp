@@ -12,7 +12,7 @@ from pdf_modifier_mcp.core import PDFAnalyzer, PDFModifier, ReplacementSpec
 
 # Paths
 TEST_DATA_DIR = Path(__file__).parent / "data"
-ORIGINAL_PDF = TEST_DATA_DIR / "original.pdf"
+SAMPLE_PDF = TEST_DATA_DIR / "sample.pdf"
 EXAMPLES_OUTPUT_DIR = Path(__file__).parent / "examples_output"
 
 
@@ -33,7 +33,7 @@ class TestTextReplacement:
 
     def test_simple_replacement(self, output_pdf: Path) -> None:
         """Replace exact text strings."""
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_pdf))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_pdf))
         spec = ReplacementSpec(
             replacements={
                 "$27.99": "$99.99",
@@ -54,7 +54,7 @@ class TestTextReplacement:
 
     def test_regex_replacement(self, output_pdf: Path) -> None:
         """Replace text using regex patterns."""
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_pdf))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_pdf))
         spec = ReplacementSpec(
             replacements={r"January \d{2}, \d{4}": "February 01, 2030"},
             use_regex=True,
@@ -74,7 +74,7 @@ class TestHyperlinks:
 
     def test_create_void_link(self, output_pdf: Path) -> None:
         """Create a neutralized (void) link."""
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_pdf))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_pdf))
         spec = ReplacementSpec(replacements={"Order Summary": "My Summary|void(0)"})
         result = modifier.process(spec)
 
@@ -96,7 +96,7 @@ class TestUseCaseExamples:
     def test_example_price_adjustment(self) -> None:
         """Use case: Update prices in an invoice."""
         output_path = EXAMPLES_OUTPUT_DIR / "1_price_adjustment.pdf"
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_path))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_path))
 
         spec = ReplacementSpec(
             replacements={
@@ -116,7 +116,7 @@ class TestUseCaseExamples:
     def test_example_anonymization(self) -> None:
         """Use case: Redact PII from a document."""
         output_path = EXAMPLES_OUTPUT_DIR / "2_anonymized.pdf"
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_path))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_path))
 
         spec = ReplacementSpec(
             replacements={
@@ -137,7 +137,7 @@ class TestUseCaseExamples:
     def test_example_date_rolling(self) -> None:
         """Use case: Update dates in a recurring document."""
         output_path = EXAMPLES_OUTPUT_DIR / "3_date_rolling.pdf"
-        modifier = PDFModifier(str(ORIGINAL_PDF), str(output_path))
+        modifier = PDFModifier(str(SAMPLE_PDF), str(output_path))
 
         spec = ReplacementSpec(
             replacements={r"January \d{2}, 2026": "February 01, 2026"},

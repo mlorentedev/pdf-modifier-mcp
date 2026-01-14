@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -28,7 +31,31 @@ mcp = FastMCP(
 )
 
 
+def handle_mcp_errors(func: Callable[..., str]) -> Callable[..., str]:
+    """Decorator to handle exceptions in MCP tools and return JSON error responses."""
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> str:
+        try:
+            return func(*args, **kwargs)
+        except PDFModifierError as e:
+            return json.dumps(e.to_dict(), indent=2)
+        except Exception as e:
+            logger.exception("Unexpected error in MCP tool %s", func.__name__)
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "UNEXPECTED_ERROR",
+                    "message": str(e),
+                },
+                indent=2,
+            )
+
+    return wrapper
+
+
 @mcp.tool()
+@handle_mcp_errors
 def read_pdf_structure(input_path: str) -> str:
     """
     Extract the complete structural content of a PDF document.
@@ -57,24 +84,13 @@ def read_pdf_structure(input_path: str) -> str:
     Example:
         read_pdf_structure("/home/user/documents/invoice.pdf")
     """
-    try:
-        analyzer = PDFAnalyzer(input_path)
-        result = analyzer.get_structure()
-        return result.model_dump_json(indent=2)
-    except PDFModifierError as e:
-        return json.dumps(e.to_dict(), indent=2)
-    except Exception as e:
-        return json.dumps(
-            {
-                "success": False,
-                "error": "UNEXPECTED_ERROR",
-                "message": str(e),
-            },
-            indent=2,
-        )
+    analyzer = PDFAnalyzer(input_path)
+    result = analyzer.get_structure()
+    return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
+@handle_mcp_errors
 def inspect_pdf_fonts(input_path: str, terms: list[str]) -> str:
     """
     Search for specific text terms and report their font properties.
@@ -103,24 +119,13 @@ def inspect_pdf_fonts(input_path: str, terms: list[str]) -> str:
     Example:
         inspect_pdf_fonts("/path/to/doc.pdf", ["Invoice", "$99.99", "Total"])
     """
-    try:
-        analyzer = PDFAnalyzer(input_path)
-        result = analyzer.inspect_fonts(terms)
-        return result.model_dump_json(indent=2)
-    except PDFModifierError as e:
-        return json.dumps(e.to_dict(), indent=2)
-    except Exception as e:
-        return json.dumps(
-            {
-                "success": False,
-                "error": "UNEXPECTED_ERROR",
-                "message": str(e),
-            },
-            indent=2,
-        )
+    analyzer = PDFAnalyzer(input_path)
+    result = analyzer.inspect_fonts(terms)
+    return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
+@handle_mcp_errors
 def modify_pdf_content(
     input_path: str,
     output_path: str,
@@ -190,22 +195,10 @@ def modify_pdf_content(
             {"Learn More": "Visit Website|https://example.com"}
         )
     """
-    try:
-        spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
-        modifier = PDFModifier(input_path, output_path)
-        result = modifier.process(spec)
-        return result.model_dump_json(indent=2)
-    except PDFModifierError as e:
-        return json.dumps(e.to_dict(), indent=2)
-    except Exception as e:
-        return json.dumps(
-            {
-                "success": False,
-                "error": "UNEXPECTED_ERROR",
-                "message": str(e),
-            },
-            indent=2,
-        )
+    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+    modifier = PDFModifier(input_path, output_path)
+    result = modifier.process(spec)
+    return result.model_dump_json(indent=2)
 
 
 def main() -> None:

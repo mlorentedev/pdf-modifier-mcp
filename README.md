@@ -67,8 +67,8 @@ pdf-mod inspect input.pdf "Invoice" "Total" "$"
 ### MCP Server (for AI Agents)
 
 ```bash
-# Start the MCP server (stdio transport)
-pdf-modifier-mcp
+# Start MCP server
+make run-mcp
 ```
 
 ## Claude Desktop Integration
@@ -155,105 +155,67 @@ docker run -i --rm -v $(pwd)/data:/data pdf-modifier-mcp
 docker compose run cli modify /data/input/doc.pdf /data/output/result.pdf -r "old=new"
 ```
 
-## Development
+## Architecture Overview
 
-### Quick Start
+The project follows a layered architecture to ensure separation of concerns and easy extensibility.
 
-```bash
-# Full setup (dependencies + pre-commit hooks)
-make setup
-
-# Run all checks (lint, type, test)
-make check
-
-# Start MCP server
-make dev
+```text
+┌─────────────────────────────────────────────────────┐
+│                    Entry Points                      │
+├──────────────────────┬──────────────────────────────┤
+│   CLI (Typer+Rich)   │      MCP (FastMCP)           │
+│   pdf-mod command    │   pdf-modifier-mcp server    │
+│   Human interaction  │   LLM interaction            │
+└──────────────────────┴──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│                   Core Layer                         │
+├─────────────────────────────────────────────────────┤
+│  modifier.py   │  analyzer.py  │  models.py         │
+│  PDFModifier   │  PDFAnalyzer  │  Pydantic schemas  │
+│                │               │                     │
+│  exceptions.py │               │                     │
+│  Error types   │               │                     │
+└─────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│                   PyMuPDF (fitz)                     │
+│              PDF manipulation engine                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Makefile Commands
+### Layer Descriptions
 
-| Command | Description |
-|---------|-------------|
-| `make setup` | Install dependencies and pre-commit hooks |
-| `make test` | Run tests with coverage |
-| `make lint` | Run ruff linter |
-| `make type` | Run mypy type checker |
-| `make check` | Run all checks (lint, type, test) |
-| `make dev` | Start MCP server (stdio) |
-| `make cli` | Show CLI help |
-| `make docker-build` | Build Docker image |
-| `make docker-run` | Run MCP server in Docker |
+#### 1. Interfaces Layer (Entry Points)
 
-### Manual Commands
+This is how users and agents interact with the system. It handles input parsing and output formatting but contains no business logic.
 
-```bash
-# Install with dev dependencies
-poetry install
+- **CLI (`interfaces/cli.py`)**: Uses `Typer` and `Rich` to provide a user-friendly command-line experience.
+- **MCP Server (`interfaces/mcp.py`)**: Uses `FastMCP` to expose tools to AI agents (like Claude).
 
-# Run tests
-poetry run pytest
+#### 2. Core Layer (Business Logic)
 
-# Run with coverage
-poetry run pytest --cov=src --cov-report=term-missing
+This layer coordinates the actual work. It uses Pydantic models to ensure data validity between the interfaces and the engine.
 
-# Linting and type checking
-poetry run ruff check src/
-poetry run mypy src/
+- **`modifier.py`**: The "Coordinator." It receives a `ReplacementSpec`, finds the text in the PDF, calculates positions, and applies changes.
+- **`analyzer.py`**: The "Reader." It extracts text, analyzes structure (pages, text blocks), and inspects fonts.
+- **`models.py`**: The "Contract." Defines strict data structures (Input/Output schemas) that all parts of the system must check against.
 
-# Pre-commit hooks
-poetry run pre-commit install
-poetry run pre-commit run --all-files
-```
+#### 3. Engine Layer (Infrastructure)
 
-### Git Workflow
-
-Development uses **GitHub Flow**:
-
-1. Create feature branch from `master` (`feat/*`, `fix/*`, etc.)
-2. Use conventional commits (`feat:`, `fix:`, `docs:`, etc.)
-3. Create PR to `master` when ready
-4. Merging triggers automatic semantic versioning
-
-### Commit Convention
-
-Commits must follow [Conventional Commits](https://conventionalcommits.org/):
-
-```bash
-feat: add new feature        # → minor version bump (0.1.0 → 0.2.0)
-fix: resolve bug             # → patch version bump (0.1.0 → 0.1.1)
-docs: update readme          # → no version bump
-chore: update dependencies   # → no version bump
-BREAKING CHANGE: ...         # → major version bump (0.1.0 → 1.0.0)
-```
-
-Pre-commit hooks validate commit messages automatically.
-
-## Architecture
-
-```
-src/pdf_modifier_mcp/
-├── core/               # Pure business logic
-│   ├── analyzer.py     # PDF text extraction and structure
-│   ├── modifier.py     # Text replacement engine
-│   ├── models.py       # Pydantic schemas
-│   └── exceptions.py   # Typed error hierarchy
-└── interfaces/         # Entry points
-    ├── cli.py          # Typer + Rich CLI
-    └── mcp.py          # FastMCP server
-```
+- **PyMuPDF (`fitz`)**: The low-level library that performs the raw I/O operations on the PDF file bytes. The Core layer wraps this dependency so it can be swapped or upgraded without breaking the Interfaces.
 
 ## Documentation
 
 - [Roadmap](docs/ROADMAP.md): Development phases and changelog
+- [Contributing](CONTRIBUTING.md): Setup, commands, and workflows
 - [LLM Context](docs/llm.txt): AI/LLM agent context file
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch from `master` (`feat/my-feature`)
-3. Make changes with conventional commits
-4. Run `make check` to verify
-5. Submit a PR to `master`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on setting up the environment, running tests, and submitting PRs.
 
 ## License
 

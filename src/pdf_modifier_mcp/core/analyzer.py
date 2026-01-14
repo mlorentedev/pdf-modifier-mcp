@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
@@ -166,19 +165,3 @@ class PDFAnalyzer:
 
         except Exception as e:
             raise PDFReadError(f"Failed to inspect fonts: {e}") from e
-
-    def to_json(self) -> str:
-        """
-        Return a JSON representation of the PDF structure.
-
-        This is a convenience method for backward compatibility.
-        Prefer get_structure() for typed access.
-
-        Returns:
-            JSON string with page structure.
-        """
-        try:
-            structure = self.get_structure()
-            return structure.model_dump_json(indent=2)
-        except PDFReadError as e:
-            return json.dumps({"error": str(e)})

@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean
 
 # Install poetry
-RUN pip install --no-cache-dir poetry==1.8.5
+RUN pip install --no-cache-dir poetry==2.2.1 && \
+    poetry self add poetry-plugin-export
 
 # Copy dependency files
 COPY pyproject.toml poetry.lock* ./
