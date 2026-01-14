@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     "pdf-modifier-mcp",
-    description="PDF modification tools for reading, analyzing, and modifying PDF documents",
 )
 
 
