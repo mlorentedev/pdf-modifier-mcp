@@ -16,7 +16,7 @@ from pdf_modifier_mcp.interfaces.mcp import (
 runner = CliRunner()
 
 TEST_DATA_DIR = Path(__file__).parent / "data"
-ORIGINAL_PDF = TEST_DATA_DIR / "original.pdf"
+SAMPLE_PDF = TEST_DATA_DIR / "sample.pdf"
 
 
 # =============================================================================
@@ -28,7 +28,7 @@ class TestCLIModify:
     def test_simple_replacement(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
         result = runner.invoke(
-            app, ["modify", str(ORIGINAL_PDF), str(output_pdf), "-r", "$27.99=$99.99"]
+            app, ["modify", str(SAMPLE_PDF), str(output_pdf), "-r", "$27.99=$99.99"]
         )
         assert result.exit_code == 0
         assert "Success" in result.stdout
@@ -40,7 +40,7 @@ class TestCLIModify:
             app,
             [
                 "modify",
-                str(ORIGINAL_PDF),
+                str(SAMPLE_PDF),
                 str(output_pdf),
                 "-r",
                 r"January \d{2}, \d{4}=February 01, 2030",
@@ -51,9 +51,7 @@ class TestCLIModify:
 
     def test_invalid_format_error(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
-        result = runner.invoke(
-            app, ["modify", str(ORIGINAL_PDF), str(output_pdf), "-r", "no_equals"]
-        )
+        result = runner.invoke(app, ["modify", str(SAMPLE_PDF), str(output_pdf), "-r", "no_equals"])
         assert result.exit_code == 1
 
     def test_nonexistent_file_error(self, tmp_path: Path) -> None:
@@ -68,12 +66,12 @@ class TestCLIAnalyze:
     """Tests for CLI analyze command."""
 
     def test_plain_text(self) -> None:
-        result = runner.invoke(app, ["analyze", str(ORIGINAL_PDF)])
+        result = runner.invoke(app, ["analyze", str(SAMPLE_PDF)])
         assert result.exit_code == 0
         assert "Page 1" in result.stdout
 
     def test_json_output(self) -> None:
-        result = runner.invoke(app, ["analyze", str(ORIGINAL_PDF), "--json"])
+        result = runner.invoke(app, ["analyze", str(SAMPLE_PDF), "--json"])
         assert result.exit_code == 0
         assert "total_pages" in result.stdout
 
@@ -82,11 +80,11 @@ class TestCLIInspect:
     """Tests for CLI inspect command."""
 
     def test_finds_terms(self) -> None:
-        result = runner.invoke(app, ["inspect", str(ORIGINAL_PDF), "Order"])
+        result = runner.invoke(app, ["inspect", str(SAMPLE_PDF), "Order"])
         assert result.exit_code == 0
 
     def test_no_matches(self) -> None:
-        result = runner.invoke(app, ["inspect", str(ORIGINAL_PDF), "XYZNONEXISTENT"])
+        result = runner.invoke(app, ["inspect", str(SAMPLE_PDF), "XYZNONEXISTENT"])
         assert result.exit_code == 0
         assert "No matches" in result.stdout
 
@@ -115,7 +113,7 @@ class TestMCPReadStructure:
     """Tests for read_pdf_structure tool."""
 
     def test_returns_valid_json(self) -> None:
-        result = read_pdf_structure(str(ORIGINAL_PDF))
+        result = read_pdf_structure(str(SAMPLE_PDF))
         parsed = json.loads(result)
         assert "total_pages" in parsed
         assert parsed["total_pages"] >= 1
@@ -130,12 +128,12 @@ class TestMCPInspectFonts:
     """Tests for inspect_pdf_fonts tool."""
 
     def test_returns_matches(self) -> None:
-        result = inspect_pdf_fonts(str(ORIGINAL_PDF), ["Order", "$"])
+        result = inspect_pdf_fonts(str(SAMPLE_PDF), ["Order", "$"])
         parsed = json.loads(result)
         assert parsed["total_matches"] >= 1
 
     def test_no_matches(self) -> None:
-        result = inspect_pdf_fonts(str(ORIGINAL_PDF), ["XYZNONEXISTENT"])
+        result = inspect_pdf_fonts(str(SAMPLE_PDF), ["XYZNONEXISTENT"])
         parsed = json.loads(result)
         assert parsed["total_matches"] == 0
 
@@ -145,7 +143,7 @@ class TestMCPModifyContent:
 
     def test_simple_replacement(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
-        result = modify_pdf_content(str(ORIGINAL_PDF), str(output_pdf), {"$27.99": "$99.99"})
+        result = modify_pdf_content(str(SAMPLE_PDF), str(output_pdf), {"$27.99": "$99.99"})
         parsed = json.loads(result)
         assert parsed["success"] is True
         assert output_pdf.exists()
@@ -153,7 +151,7 @@ class TestMCPModifyContent:
     def test_regex_replacement(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
         result = modify_pdf_content(
-            str(ORIGINAL_PDF),
+            str(SAMPLE_PDF),
             str(output_pdf),
             {r"January \d{2}, \d{4}": "February 01, 2030"},
             use_regex=True,
@@ -164,7 +162,7 @@ class TestMCPModifyContent:
     def test_hyperlink_syntax(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
         result = modify_pdf_content(
-            str(ORIGINAL_PDF), str(output_pdf), {"Order Summary": "Click|https://example.com"}
+            str(SAMPLE_PDF), str(output_pdf), {"Order Summary": "Click|https://example.com"}
         )
         parsed = json.loads(result)
         assert parsed["success"] is True

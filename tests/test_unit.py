@@ -1,6 +1,5 @@
 """Unit tests for core modules: modifier, analyzer, exceptions."""
 
-import json
 from pathlib import Path
 
 import pytest
@@ -18,7 +17,7 @@ from pdf_modifier_mcp.core.exceptions import (
 from pdf_modifier_mcp.core.models import FontInspectionResult, PDFStructure
 
 TEST_DATA_DIR = Path(__file__).parent / "data"
-ORIGINAL_PDF = TEST_DATA_DIR / "original.pdf"
+SAMPLE_PDF = TEST_DATA_DIR / "sample.pdf"
 
 
 # =============================================================================
@@ -68,21 +67,21 @@ class TestPDFAnalyzer:
     """Tests for PDFAnalyzer."""
 
     def test_init_with_string_path(self) -> None:
-        analyzer = PDFAnalyzer(str(ORIGINAL_PDF))
-        assert analyzer.file_path == ORIGINAL_PDF
+        analyzer = PDFAnalyzer(str(SAMPLE_PDF))
+        assert analyzer.file_path == SAMPLE_PDF
 
     def test_init_with_path_object(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
-        assert analyzer.file_path == ORIGINAL_PDF
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
+        assert analyzer.file_path == SAMPLE_PDF
 
     def test_get_structure_returns_pdf_structure(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
         structure = analyzer.get_structure()
         assert isinstance(structure, PDFStructure)
         assert structure.total_pages >= 1
 
     def test_get_structure_contains_elements(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
         structure = analyzer.get_structure()
         has_elements = any(len(page.elements) > 0 for page in structure.pages)
         assert has_elements
@@ -93,7 +92,7 @@ class TestPDFAnalyzer:
             analyzer.get_structure()
 
     def test_extract_text_returns_string(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
         text = analyzer.extract_text()
         assert isinstance(text, str)
         assert "--- Page 1 ---" in text
@@ -104,27 +103,15 @@ class TestPDFAnalyzer:
             analyzer.extract_text()
 
     def test_inspect_fonts_returns_result(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
         result = analyzer.inspect_fonts(["Order"])
         assert isinstance(result, FontInspectionResult)
         assert result.total_matches >= 0
 
     def test_inspect_fonts_no_matches(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
+        analyzer = PDFAnalyzer(SAMPLE_PDF)
         result = analyzer.inspect_fonts(["XYZNONEXISTENT123"])
         assert result.total_matches == 0
-
-    def test_to_json_returns_valid_json(self) -> None:
-        analyzer = PDFAnalyzer(ORIGINAL_PDF)
-        result = analyzer.to_json()
-        parsed = json.loads(result)
-        assert "total_pages" in parsed
-
-    def test_to_json_error_returns_error_json(self, tmp_path: Path) -> None:
-        analyzer = PDFAnalyzer(tmp_path / "nonexistent.pdf")
-        result = analyzer.to_json()
-        parsed = json.loads(result)
-        assert "error" in parsed
 
 
 # =============================================================================

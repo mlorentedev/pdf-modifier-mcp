@@ -26,9 +26,11 @@ htmlcov/
 
 # Project Specific
 tests/examples_output/
+!tests/data/sample.pdf
 *.log
 .DS_Store
 tests/examples_output/
+data/
 
 # AI
 .claude/

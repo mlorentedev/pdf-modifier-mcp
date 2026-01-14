@@ -112,10 +112,8 @@ class PDFModifier:
                 len(pages_modified),
             )
 
-        except PDFReadError:
-            raise
         except Exception as e:
-            raise PDFWriteError(f"Failed to save PDF: {e}") from e
+            raise PDFWriteError(f"Failed to process/save PDF: {e}") from e
         finally:
             self.close()
 
@@ -153,16 +151,13 @@ class PDFModifier:
         self, color_input: int | list[float] | tuple[float, ...]
     ) -> tuple[float, float, float]:
         """Convert PyMuPDF color to RGB float tuple (0.0-1.0)."""
-        try:
-            if isinstance(color_input, int):
-                r = ((color_input >> 16) & 0xFF) / 255.0
-                g = ((color_input >> 8) & 0xFF) / 255.0
-                b = (color_input & 0xFF) / 255.0
-                return (r, g, b)
-            elif isinstance(color_input, list | tuple) and len(color_input) >= 3:
-                return tuple(c if c <= 1.0 else c / 255.0 for c in list(color_input)[:3])  # type: ignore[return-value]
-        except Exception:
-            pass
+        if isinstance(color_input, int):
+            r = ((color_input >> 16) & 0xFF) / 255.0
+            g = ((color_input >> 8) & 0xFF) / 255.0
+            b = (color_input & 0xFF) / 255.0
+            return (r, g, b)
+        elif isinstance(color_input, list | tuple) and len(color_input) >= 3:
+            return tuple(c if c <= 1.0 else c / 255.0 for c in color_input[:3])  # type: ignore[return-value]
         return (0.0, 0.0, 0.0)
 
     def _collect_replacements(
