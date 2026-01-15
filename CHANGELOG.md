@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v1.0.3](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.0.3) (2026-01-15)
+
+
+
+### Bug fixes
+
+
+- remove .well-known folder (for HTTP servers only) ([`29cb390`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/29cb39054601cc9140dd4078c76a14244ff85726))
+
+
+
+
+
 ## [v1.0.2](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.0.2) (2026-01-15)
 
 
