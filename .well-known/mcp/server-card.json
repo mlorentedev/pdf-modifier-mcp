@@ -1,0 +1,21 @@
+{
+  "$schema": "https://smithery.ai/schemas/server-card-v1.json",
+  "name": "pdf-modifier-mcp",
+  "description": "A robust PDF modification tool for AI agents. Preserves layout and fonts while performing find/replace operations.",
+  "repository": "https://github.com/mlorentedev/pdf-modifier-mcp",
+  "keywords": ["pdf", "edit", "modify", "replace", "text", "layout", "font"],
+  "tools": [
+    {
+      "name": "read_pdf_structure",
+      "description": "Extract the complete structural content of a PDF document (pages, text blocks, fonts, positions)."
+    },
+    {
+      "name": "inspect_pdf_fonts",
+      "description": "Search for specific text terms and report their font properties (name, size, family) to ensure accurate style matching."
+    },
+    {
+      "name": "modify_pdf_content",
+      "description": "Find and replace text in a PDF while preserving original font styles and layout. Supports regex and hyperlinks."
+    }
+  ]
+}
