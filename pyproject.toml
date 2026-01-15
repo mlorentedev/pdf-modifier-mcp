@@ -50,7 +50,6 @@ pytest-cov = ">=4.0.0"
 mypy = ">=1.0.0"
 ruff = ">=0.1.0"
 pre-commit = "^4.5.1"
-python-semantic-release = ">=9.0.0,<10.0.0"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -75,30 +74,3 @@ select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pdf_modifier_mcp"]
-
-# =============================================================================
-# Semantic Release Configuration
-# =============================================================================
-[tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
-build_command = "poetry build"
-commit_message = "chore(release): v{version}"
-tag_format = "v{version}"
-
-[tool.semantic_release.branches.master]
-match = "master"
-prerelease = false
-
-[tool.semantic_release.changelog]
-template_dir = ".github/templates"
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]
-
-[tool.semantic_release.publish]
-upload_to_vcs_release = true
