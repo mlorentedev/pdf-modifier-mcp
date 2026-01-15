@@ -42,17 +42,8 @@ jobs:
           semantic-release version
           semantic-release publish
 
-      - name: Check for new release
-        id: check_release
-        run: |
-          if git describe --exact-match --tags HEAD 2>/dev/null; then
-            echo "released=true" >> $GITHUB_OUTPUT
-          else
-            echo "released=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Publish to PyPI
-        if: steps.check_release.outputs.released == 'true'
+        if: hashFiles('dist/*.whl') != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
