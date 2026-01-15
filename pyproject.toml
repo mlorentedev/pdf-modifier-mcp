@@ -81,13 +81,18 @@ known-first-party = ["pdf_modifier_mcp"]
 # =============================================================================
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
-branch = "master"
 build_command = "poetry build"
 commit_message = "chore(release): v{version}"
 tag_format = "v{version}"
 
+[tool.semantic_release.branches.master]
+match = "master"
+prerelease = false
+
 [tool.semantic_release.changelog]
 template_dir = ".github/templates"
+
+[tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.commit_parser_options]
@@ -96,8 +101,9 @@ minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
 
 [tool.semantic_release.remote]
-type = "github"
 name = "origin"
+type = "github"
+ignore_token_for_push = false
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = true
