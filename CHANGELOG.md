@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v1.0.1](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.0.1) (2026-01-15)
+
+
+
+### Bug fixes
+
+
+- use uvx to run package from PyPI ([`dffb565`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/dffb56587b903246d219eefac3926be6119e35df))
+
+
+
+
+
+### Refactoring
+
+
+- simplify release workflow and fix deprecation warning ([`4fe922c`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/4fe922c74529186da9ac1a8b8fe2844dd512995c))
+
+
+
+
+
 ## [v1.0.0](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.0.0) (2026-01-15)
 
 
