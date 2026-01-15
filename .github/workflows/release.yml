@@ -1,45 +1,40 @@
-name: Publish
+name: Release
 
 on:
   push:
-    tags:
-      - "v*"  # Triggers on tags like v0.1.0, v1.0.0
+    branches:
+      - master
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
+    concurrency: release
     permissions:
       contents: write
-      id-token: write  # Required for Trusted Publishing to PyPI
+      id-token: write  # For PyPI trusted publishing
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          fetch-depth: 0
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v9.15.2
         with:
-          version: 2.0.0
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install Dependencies
-        run: poetry install --no-interaction
-
-      - name: Build Package
-        run: poetry build
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # This tells the action to run these commands to build the artifact
+          build_command: "pip install poetry && poetry build"
 
       - name: Publish to PyPI
+        if: steps.release.outputs.released == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip_existing: true
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Publish to GitHub Release
+        if: steps.release.outputs.released == 'true'
+        uses: python-semantic-release/upload-to-gh-release@main
         with:
-          files: dist/*
-          generate_release_notes: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}

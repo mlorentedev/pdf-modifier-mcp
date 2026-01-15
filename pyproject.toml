@@ -74,3 +74,22 @@ select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pdf_modifier_mcp"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+build_command = "poetry build"
+commit_message = "chore(release): v{version}"
+tag_format = "v{version}"
+
+[tool.semantic_release.changelog]
+template_dir = ".github/templates"
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.branches.master]
+match = "master"
+prerelease = false
+
+[tool.semantic_release.publish]
+upload_to_vcs_release = true
