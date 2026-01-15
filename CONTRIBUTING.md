@@ -24,13 +24,12 @@ make run-mcp
 | `make setup` | Install dependencies and pre-commit hooks |
 | `make test` | Run tests with coverage |
 | `make lint` | Run ruff linter |
+| `make format` | Format code with ruff |
 | `make type` | Run mypy type checker |
 | `make check` | Run all checks (lint, type, test) |
 | `make run-mcp` | Start MCP server (stdio) |
 | `make run-cli` | Run CLI (use `ARGS="..."` for arguments) |
-| `make show-version` | Show current project version |
-| `make docker-build` | Build Docker image (tags version + latest) |
-| `make docker-run` | Run MCP server in Docker |
+| `make build` | Build distribution artifacts |
 | `make clean` | Remove build artifacts |
 
 ### Manual Commands (Poetry)
@@ -48,10 +47,6 @@ poetry run pytest --cov=src --cov-report=term-missing
 # Linting and type checking
 poetry run ruff check src/
 poetry run mypy src/
-
-# Pre-commit hooks
-poetry run pre-commit install
-poetry run pre-commit run --all-files
 ```
 
 ## Git Workflow
@@ -95,6 +90,6 @@ docs: update contributing guide
 ## Pull Request Process
 
 1.  Ensure `make check` passes locally.
-2.  Update `README.md` or `docs/` if you changed functionality.
+2.  Update `README.md` if you changed functionality.
 3.  The CI pipeline will run automatically on your PR.
 4.  Once merged to `master`, a new release will be published automatically if applicable.
