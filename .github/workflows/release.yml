@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master, "feat/test-release"]
+    branches: [master]
   pull_request:
     types: [closed]
     branches: [master]

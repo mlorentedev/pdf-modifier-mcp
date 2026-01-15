@@ -42,7 +42,9 @@ jobs:
       - name: Run quality checks
         run: make check
 
-      - name: Upload coverage to Codecov
+      - name: Verify Release Config
+        run: poetry run semantic-release version --print
+
         if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
         with:
