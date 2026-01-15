@@ -1,0 +1,10 @@
+# Smithery MCP Registry Configuration
+# https://smithery.ai
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: 'pdf-modifier-mcp', args: [] })

@@ -5,12 +5,11 @@ description = "PDF modification tool with CLI and MCP interfaces for AI agents."
 authors = [{name = "Manu", email = "mlorentedev@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 keywords = ["pdf", "mcp", "claude", "ai", "modification"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -38,8 +37,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{include = "pdf_modifier_mcp", from = "src"}]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0.0"
