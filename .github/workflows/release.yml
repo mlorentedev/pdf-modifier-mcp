@@ -34,13 +34,11 @@ jobs:
       - name: Semantic Release
         id: release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Use --no-push to avoid pushing to protected branch
-        # Tags are pushed separately and GitHub Release is created via publish
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          semantic-release version --no-push --no-commit
+          semantic-release version
           semantic-release publish
 
       - name: Publish to PyPI
