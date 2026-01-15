@@ -5,15 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-{% for version, release in context.history.released.items() %}
+{% for version, release in ctx.history.released.items() %}
 ## [{{ version.as_tag() }}](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/{{ version.as_tag() }}) ({{ release.tagged_date.strftime("%Y-%m-%d") }})
 
-{% for type, commits in release.elements | groupby("type") %}
-### {{ type | capitalize }}
+{% for type_, commits in release["elements"] | dictsort %}
+{% if type_ != "unknown" %}
+### {{ type_ | capitalize }}
 
 {% for commit in commits %}
-- {{ commit.descriptions[0] }} ([`{{ commit.short_hash }}`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/{{ commit.hexsha }}))
+- {{ commit.descriptions[0] }} ([`{{ commit.hexsha[:7] }}`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/{{ commit.hexsha }}))
 {% endfor %}
 
+{% endif %}
 {% endfor %}
 {% endfor %}
