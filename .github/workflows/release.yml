@@ -44,14 +44,15 @@ jobs:
           semantic-release publish
 
       - name: Publish to PyPI
-        # Only publish to PyPI if a new release was created (tag exists)
-        # Note: 'semantic-release publish' uploads to GitHub Releases (vcs).
-        # We use the separate pypi-publish action for PyPI because it handles OIDC token exchange securely.
-        # We detect if a tag was just pushed by checking git.
+        # Check if a new tag was created
+        if: success()
         run: |
-          if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
-            echo "New tag detected, publishing to PyPI..."
-            poetry publish --build
-          else
-             echo "No new tag, skipping PyPI publish."
-          fi
+           if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+             echo "new_release=true" >> $GITHUB_ENV
+           fi
+
+      - name: Build and Publish to PyPI
+        if: env.new_release == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip_existing: true
