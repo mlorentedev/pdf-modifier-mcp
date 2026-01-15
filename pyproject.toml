@@ -93,3 +93,4 @@ prerelease = false
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = true
+upload_to_pypi = false
