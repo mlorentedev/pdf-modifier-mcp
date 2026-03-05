@@ -1,0 +1,60 @@
+---
+title: pdf-modifier-mcp
+description: Find and replace text in PDFs while preserving font styles. CLI for humans, MCP server for AI agents.
+template: splash
+hero:
+  tagline: Find and replace text in PDFs — from your terminal or your AI assistant. Font styles preserved, layout untouched.
+  actions:
+    - text: Get Started
+      link: /pdf-modifier-mcp/getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/mlorentedev/pdf-modifier-mcp
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why pdf-modifier-mcp?
+
+PDF editing tools are either bloated GUIs or brittle scripts that destroy formatting.
+This tool preserves font styles — bold, italic, size — during text replacement.
+It works at the span level, redacting original text and reinserting replacements with matched Base 14 font properties.
+
+Use the CLI for batch jobs and scripting, or run it as an MCP server so Claude Desktop, Cursor, or any MCP client can edit PDFs directly.
+
+Published on PyPI as `pdf-modifier-mcp`. Python 3.10+.
+
+## Features
+
+<CardGrid>
+  <Card title="MCP Server" icon="puzzle">
+    Three tools for AI agents: `read_pdf_structure`, `inspect_pdf_fonts`, `modify_pdf_content`.
+    Works with Claude Desktop, Cursor, and any MCP-compatible client. Structured JSON responses with error codes.
+  </Card>
+  <Card title="CLI" icon="laptop">
+    Typer + Rich interface. Simple replacements (`-r "old=new"`), regex patterns (`--regex`),
+    hyperlink creation (`"text|https://..."`), and JSON output for scripting.
+  </Card>
+  <Card title="Style Preservation" icon="approve-check">
+    Maps PDF font names to Base 14 families (Helvetica, Times, Courier) with bold detection.
+    Color, size, and position are carried over. Layout stays intact.
+  </Card>
+  <Card title="Regex Support" icon="setting">
+    Pattern-based replacements for dates, invoice IDs, prices, and structured text.
+    Patterns are validated at input. One command, bulk changes across the entire document.
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+```bash
+pip install pdf-modifier-mcp
+```
+
+```bash
+pdf-mod modify input.pdf output.pdf -r "Draft=Final" -r "$99.99=$149.99"
+```
+
+Read the [Getting Started guide](/pdf-modifier-mcp/getting-started/) for CLI examples, MCP server setup, and integration details.

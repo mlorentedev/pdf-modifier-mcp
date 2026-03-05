@@ -35,3 +35,8 @@ data/
 # AI
 .claude/
 .gemini/
+
+# Astro / Site
+site/node_modules/
+site/dist/
+site/.astro/
