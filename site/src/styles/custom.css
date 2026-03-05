@@ -1,0 +1,32 @@
+:root {
+  --sl-color-accent-low: #3b1d0e;
+  --sl-color-accent: #e44d26;
+  --sl-color-accent-high: #fdd8cc;
+  --sl-color-white: #f8f9fa;
+  --sl-color-gray-1: #eceef2;
+  --sl-color-gray-2: #c2c5cc;
+  --sl-color-gray-3: #888c96;
+  --sl-color-gray-4: #555962;
+  --sl-color-gray-5: #383a42;
+  --sl-color-gray-6: #272a2e;
+  --sl-color-black: #181a1f;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fdd8cc;
+  --sl-color-accent: #d4391c;
+  --sl-color-accent-high: #3b1d0e;
+}
+
+/* Hero badge strip */
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.hero-badges img {
+  height: 22px;
+}

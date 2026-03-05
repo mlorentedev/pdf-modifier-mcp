@@ -11,29 +11,39 @@ Install from PyPI:
 pip install pdf-modifier-mcp
 ```
 
-Or run directly without installing:
+Or run directly without installing (requires [uv](https://docs.astral.sh/uv/)):
 
 ```bash
 uvx pdf-modifier-mcp
 ```
 
-Requires Python 3.10 or later.
+Requires **Python 3.10** or later.
+
+To install from source:
+
+```bash
+git clone https://github.com/mlorentedev/pdf-modifier-mcp.git
+cd pdf-modifier-mcp
+make setup
+```
 
 ## CLI Usage
 
-The `pdf-mod` command provides four operations: `modify`, `analyze`, `inspect`, and `--help`.
+The `pdf-mod` command exposes four operations.
 
-### Simple text replacement
+### Replace text
 
 ```bash
 pdf-mod modify input.pdf output.pdf -r "old text=new text"
 ```
 
-Repeat `-r` for multiple replacements in a single pass:
+Stack multiple replacements in a single pass:
 
 ```bash
 pdf-mod modify input.pdf output.pdf -r "$99.99=$149.99" -r "Draft=Final"
 ```
+
+Font style (family, weight, size, color) is preserved automatically. The tool maps embedded fonts to the nearest Base 14 family — Helvetica, Times-Roman, or Courier — with bold variant detection.
 
 ### Regex replacement
 
@@ -44,29 +54,33 @@ pdf-mod modify input.pdf output.pdf -r "Order #\d+=Order #REDACTED" --regex
 pdf-mod modify input.pdf output.pdf -r "January \d{2}, \d{4}=DATE REDACTED" --regex
 ```
 
-### Hyperlinks
+Patterns are validated at input. Invalid regex returns an error before touching the PDF.
 
-Append a URL after `|` to create a clickable link on the replacement text:
+### Create and neutralize hyperlinks
+
+Append a URL after `|` to make the replacement text clickable:
 
 ```bash
 pdf-mod modify input.pdf output.pdf -r "Click Here=Visit Site|https://example.com"
 ```
 
-Use `void(0)` to neutralize an existing link:
+Neutralize an existing link with `void(0)`:
 
 ```bash
 pdf-mod modify input.pdf output.pdf -r "Click Here=Click Here|void(0)"
 ```
 
+Supported schemes: `http://`, `https://`, `mailto:`, `javascript:`.
+
 ### Analyze PDF structure
 
-Extract text content with page separators:
+Plain text extraction with page separators:
 
 ```bash
 pdf-mod analyze input.pdf
 ```
 
-Get full structure as JSON (positions, fonts, colors):
+Full structure as JSON — every text span with position, font, size, and color:
 
 ```bash
 pdf-mod analyze input.pdf --json
@@ -74,23 +88,25 @@ pdf-mod analyze input.pdf --json
 
 ### Inspect fonts
 
-Search for terms and display their font properties:
+Search for terms and display their font properties in a Rich table:
 
 ```bash
 pdf-mod inspect input.pdf "Invoice" "Total" "$"
 ```
 
-Returns a table with columns: Page, Term, Font, Size, and Context.
+Output columns: Page, Term, Font, Size, Context (first 100 characters of the containing span).
 
 ## MCP Server
 
-Start the server over stdio:
+The MCP server exposes the same functionality over stdio for AI agent integration.
+
+### Start the server
 
 ```bash
 pdf-modifier-mcp
 ```
 
-### Claude Desktop configuration
+### Claude Desktop
 
 Add to `~/.config/claude/claude_desktop_config.json`:
 
@@ -117,32 +133,46 @@ Or run from PyPI without a local install:
 }
 ```
 
-### MCP Tools
+### Cursor
+
+Add an MCP server in Cursor settings with `pdf-modifier-mcp` as the command. Any MCP-compatible client that supports stdio transport will work.
+
+### Available tools
 
 | Tool | Parameters | Description |
 |------|-----------|-------------|
-| `read_pdf_structure` | `input_path` | Extract complete PDF structure — text, positions, fonts, colors — as JSON. Use first to understand document layout. |
-| `inspect_pdf_fonts` | `input_path`, `terms[]` | Search for text terms and return their font name, size, and position. Useful before making replacements. |
-| `modify_pdf_content` | `input_path`, `output_path`, `replacements{}`, `use_regex?` | Find and replace text with style preservation. Supports regex and hyperlink syntax (`text\|URL`). Returns count of replacements and warnings. |
+| `read_pdf_structure` | `input_path` | Returns complete PDF structure — text, bounding boxes, font names, sizes, colors — as JSON. Use this first to understand the document layout before making changes. |
+| `inspect_pdf_fonts` | `input_path`, `terms[]` | Searches for text terms (substring match) and returns font name, size, and position for each match. Run this before replacements to verify font handling. |
+| `modify_pdf_content` | `input_path`, `output_path`, `replacements{}`, `use_regex?` | Find and replace text with style preservation. Supports regex patterns and hyperlink syntax (`text\|URL`). Returns replacements made, pages modified, and any warnings. |
 
-### How modification works
+All tools return structured JSON. Errors include a typed error code (`FILE_NOT_FOUND`, `READ_ERROR`, `WRITE_ERROR`), a human-readable message, and a details object.
 
-1. The tool opens the PDF with PyMuPDF and scans each page for matching text spans.
-2. Matched spans are redacted (white fill) and `apply_redactions()` is called once per page.
-3. Replacement text is inserted at the original position with matched font properties (family, weight, size, color).
-4. Font names are mapped to the nearest Base 14 family: Helvetica, Times-Roman, or Courier, with bold variant detection.
+### Typical agent workflow
 
-Text matching operates within individual spans. If a target phrase is split across multiple spans in the PDF, it will not match — this is a known limitation of span-level processing.
+1. Call `read_pdf_structure` to get the full document layout.
+2. Call `inspect_pdf_fonts` with the target terms to confirm font properties.
+3. Call `modify_pdf_content` with the replacement map.
+
+## How it works
+
+1. The PDF is opened with PyMuPDF and each page is scanned for text spans matching the target.
+2. All matches on a page are collected, then redacted in batch (`apply_redactions()` called once per page).
+3. Replacement text is inserted at the original coordinates with matched font properties.
+4. Embedded font names are mapped to Base 14 equivalents: `"Arial-BoldMT"` becomes Helvetica-Bold (`HeBo`), `"TimesNewRomanPSMT"` becomes Times-Roman (`TiRo`), etc.
+
+**Known limitation:** text matching operates within individual PDF spans. If a target phrase is split across two spans by the PDF producer, it will not match. Use `read_pdf_structure` to inspect span boundaries when this happens.
 
 ## Architecture
 
 ```
 Entry Points               Core Layer                  Engine
-├── CLI (Typer + Rich)  →   ├── PDFModifier          →  PyMuPDF (fitz)
-└── MCP Server (FastMCP)    ├── PDFAnalyzer
-                            └── Pydantic models
++-----------------------+   +-----------------------+   +----------------+
+| CLI (Typer + Rich)    |-->| PDFModifier           |-->| PyMuPDF (fitz) |
+| MCP Server (FastMCP)  |   | PDFAnalyzer           |   +----------------+
++-----------------------+   | Pydantic v2 models    |
+                            +-----------------------+
 ```
 
-- **PDFModifier**: Context manager. Collects replacements per page, batch-applies redactions, inserts styled text.
-- **PDFAnalyzer**: Reads PDF structure via `page.get_text("dict")`, traverses block/line/span hierarchy.
-- **Models**: `ReplacementSpec` (input, validates regex, max 100 replacements), `ModificationResult`, `PDFStructure`, `FontInspectionResult`.
+- **PDFModifier** — context manager that opens, modifies, and saves the PDF. Batch-redact strategy for efficiency.
+- **PDFAnalyzer** — reads structure via `page.get_text("dict")`, traverses the block/line/span hierarchy.
+- **Pydantic models** — `ReplacementSpec` validates input (regex compilation, max 100 replacements). `ModificationResult`, `PDFStructure`, and `FontInspectionResult` are the typed outputs.

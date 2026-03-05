@@ -12,49 +12,117 @@ hero:
       link: https://github.com/mlorentedev/pdf-modifier-mcp
       icon: external
       variant: minimal
+    - text: PyPI
+      link: https://pypi.org/project/pdf-modifier-mcp/
+      icon: external
+      variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard, Badge } from '@astrojs/starlight/components';
 
-## Why pdf-modifier-mcp?
+<div class="hero-badges">
+  <a href="https://github.com/mlorentedev/pdf-modifier-mcp/actions/workflows/ci.yml">
+    <img src="https://github.com/mlorentedev/pdf-modifier-mcp/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://pypi.org/project/pdf-modifier-mcp/">
+    <img src="https://badge.fury.io/py/pdf-modifier-mcp.svg" alt="PyPI version" />
+  </a>
+  <a href="https://www.python.org/downloads/">
+    <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+" />
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" />
+  </a>
+</div>
+
+## The problem
 
 PDF editing tools are either bloated GUIs or brittle scripts that destroy formatting.
-This tool preserves font styles — bold, italic, size — during text replacement.
-It works at the span level, redacting original text and reinserting replacements with matched Base 14 font properties.
+Replacing text in a PDF should not require Adobe Acrobat, a SaaS subscription, or a prayer that your fonts survive.
 
-Use the CLI for batch jobs and scripting, or run it as an MCP server so Claude Desktop, Cursor, or any MCP client can edit PDFs directly.
+## The solution
 
-Published on PyPI as `pdf-modifier-mcp`. Python 3.10+.
+`pdf-modifier-mcp` replaces text at the span level: it redacts the original, then reinserts the replacement with matched font family, weight, size, and color — using Base 14 font mapping (Helvetica, Times, Courier and their bold variants).
+
+Two interfaces, same engine:
+- **CLI** (`pdf-mod`) — for batch jobs, scripting, and CI pipelines.
+- **MCP Server** (`pdf-modifier-mcp`) — so Claude Desktop, Cursor, or any MCP client can edit PDFs autonomously.
+
+Install and run in one line:
+
+```bash
+pip install pdf-modifier-mcp
+```
 
 ## Features
 
 <CardGrid>
   <Card title="MCP Server" icon="puzzle">
     Three tools for AI agents: `read_pdf_structure`, `inspect_pdf_fonts`, `modify_pdf_content`.
-    Works with Claude Desktop, Cursor, and any MCP-compatible client. Structured JSON responses with error codes.
+    Works with Claude Desktop, Cursor, and any MCP-compatible client.
+    Structured JSON responses with typed error codes.
   </Card>
-  <Card title="CLI" icon="laptop">
-    Typer + Rich interface. Simple replacements (`-r "old=new"`), regex patterns (`--regex`),
-    hyperlink creation (`"text|https://..."`), and JSON output for scripting.
+  <Card title="Command-Line Interface" icon="laptop">
+    Typer + Rich powered. Simple replacements (`-r "old=new"`), regex patterns (`--regex`),
+    hyperlink creation, font inspection tables, and JSON output for scripting.
   </Card>
   <Card title="Style Preservation" icon="approve-check">
-    Maps PDF font names to Base 14 families (Helvetica, Times, Courier) with bold detection.
-    Color, size, and position are carried over. Layout stays intact.
+    Maps PDF font names to Base 14 families with bold detection.
+    Color, size, and position are carried over from original spans.
+    Layout stays intact — no reflow, no broken pages.
   </Card>
-  <Card title="Regex Support" icon="setting">
-    Pattern-based replacements for dates, invoice IDs, prices, and structured text.
-    Patterns are validated at input. One command, bulk changes across the entire document.
+  <Card title="Regex and Hyperlinks" icon="setting">
+    Pattern-based bulk replacements for dates, invoice IDs, prices, and structured text.
+    Create clickable links or neutralize existing ones with `text|URL` syntax.
   </Card>
 </CardGrid>
 
-## Quick Start
+## Quick start
 
 ```bash
+# Install from PyPI
 pip install pdf-modifier-mcp
-```
 
-```bash
+# Replace text in a PDF
 pdf-mod modify input.pdf output.pdf -r "Draft=Final" -r "$99.99=$149.99"
+
+# Use regex for bulk changes
+pdf-mod modify input.pdf output.pdf -r "Order #\d+=Order #REDACTED" --regex
+
+# Analyze PDF structure
+pdf-mod analyze invoice.pdf --json
 ```
 
-Read the [Getting Started guide](/pdf-modifier-mcp/getting-started/) for CLI examples, MCP server setup, and integration details.
+## MCP tools at a glance
+
+| Tool | What it does |
+|------|-------------|
+| `read_pdf_structure` | Returns every text span with position, font, size, and color as JSON |
+| `inspect_pdf_fonts` | Searches for terms and reports font properties — useful before replacements |
+| `modify_pdf_content` | Find and replace with style preservation, regex, and hyperlink support |
+
+## Architecture
+
+```
+Entry Points               Core Layer                  Engine
++-----------------------+   +-----------------------+   +----------------+
+| CLI (Typer + Rich)    |-->| PDFModifier           |-->| PyMuPDF (fitz) |
+| MCP Server (FastMCP)  |   | PDFAnalyzer           |   +----------------+
++-----------------------+   | Pydantic v2 models    |
+                            +-----------------------+
+```
+
+All interfaces share the same core. The modifier uses a batch-redact strategy — collecting all matches per page, applying redactions once, then inserting styled replacements. No intermediate saves, no re-parsing.
+
+<CardGrid>
+  <LinkCard
+    title="Getting Started"
+    href="/pdf-modifier-mcp/getting-started/"
+    description="Installation, CLI usage, MCP server setup, and integration guide."
+  />
+  <LinkCard
+    title="Source Code"
+    href="https://github.com/mlorentedev/pdf-modifier-mcp"
+    description="Browse the source, open issues, or contribute on GitHub."
+  />
+</CardGrid>
