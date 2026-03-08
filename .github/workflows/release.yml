@@ -37,26 +37,27 @@ jobs:
       - name: Semantic Release
         id: release
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Run version command and capture output
-          OUTPUT=$(semantic-release version 2>&1)
-          echo "$OUTPUT"
+          # Run version bump
+          semantic-release version
 
-          if echo "$OUTPUT" | grep -q "No release will be made"; then
-            echo "new_release=false" >> $GITHUB_OUTPUT
-          else
-            # Proceed with publish
-            semantic-release publish
+          # Determine if a new tag was created on the current commit
+          # semantic-release version creates a new commit and tags it
+          NEW_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "none")
+
+          if [ "$NEW_TAG" != "none" ]; then
+            echo "Detected new release: $NEW_TAG"
             echo "new_release=true" >> $GITHUB_OUTPUT
-            # Get the new version to checkout in next job
-            VERSION=$(semantic-release version --print)
-            echo "new_tag=v$VERSION" >> $GITHUB_OUTPUT
+            echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+            semantic-release publish
+          else
+            echo "No new release created"
+            echo "new_release=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Publish to PyPI
         if: hashFiles('dist/*.whl') != ''
         uses: pypa/gh-action-pypi-publish@release/v1
