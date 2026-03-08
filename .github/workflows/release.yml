@@ -12,6 +12,8 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    outputs:
+      new_release: ${{ steps.release.outputs.new_release }}
 
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +43,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           semantic-release version
           semantic-release publish
+          # Check if a new tag was created in this run
+          if git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+            echo "new_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_release=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Publish to PyPI
         if: hashFiles('dist/*.whl') != ''
@@ -50,6 +58,7 @@ jobs:
 
   publish-mcp:
     needs: release
+    if: needs.release.outputs.new_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
