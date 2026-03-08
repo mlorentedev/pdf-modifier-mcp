@@ -19,13 +19,9 @@ classifiers = [
 dependencies = [
     "pymupdf>=1.26.7",
     "typer[all]>=0.9.0",
-    "fastmcp>=0.1.0",
+    "fastmcp>=0.4.1",
     "pydantic>=2.0.0",
 ]
-
-[project.scripts]
-pdf-mod = "pdf_modifier_mcp.interfaces.cli:main"
-pdf-modifier-mcp = "pdf_modifier_mcp.interfaces.mcp:main"
 
 [project.optional-dependencies]
 dev = [
@@ -34,22 +30,24 @@ dev = [
     "pytest-cov>=4.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
+    "pre-commit>=4.0.0",
 ]
 
+[project.scripts]
+pdf-mod = "pdf_modifier_mcp.interfaces.cli:main"
+pdf-modifier-mcp = "pdf_modifier_mcp.interfaces.mcp:main"
+
+[project.urls]
+Homepage = "https://github.com/mlorentedev/pdf-modifier-mcp"
+Repository = "https://github.com/mlorentedev/pdf-modifier-mcp"
+Documentation = "https://mlorentedev.github.io/pdf-modifier-mcp/"
+
 [build-system]
-requires = ["poetry-core>=2.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
-packages = [{include = "pdf_modifier_mcp", from = "src"}]
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=7.0.0"
-pytest-asyncio = ">=0.23.0"
-pytest-cov = ">=4.0.0"
-mypy = ">=1.0.0"
-ruff = ">=0.1.0"
-pre-commit = "^4.5.1"
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_modifier_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -58,6 +56,7 @@ addopts = ["-v"]
 
 [tool.mypy]
 python_version = "3.10"
+strict = false
 warn_return_any = true
 warn_unused_configs = true
 
@@ -74,27 +73,3 @@ select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pdf_modifier_mcp"]
-
-[tool.semantic_release]
-commit = false
-version_toml = ["pyproject.toml:project.version"]
-version_variables = [
-    "server.json:version"
-]
-build_command = "poetry build"
-commit_message = "chore(release): v{version}"
-tag_format = "v{version}"
-branch = "master"
-
-[tool.semantic_release.changelog]
-template_dir = ".github/templates"
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-
-[tool.semantic_release.remote]
-type = "github"
-
-[tool.semantic_release.publish]
-upload_to_vcs_release = true
-upload_to_pypi = false
