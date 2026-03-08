@@ -73,7 +73,9 @@ jobs:
           else
             echo "No new release created"
             echo "new_release=false" >> $GITHUB_OUTPUT
-          fi      - name: Publish to PyPI
+          fi
+
+      - name: Publish to PyPI
         if: hashFiles('dist/*.whl') != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
