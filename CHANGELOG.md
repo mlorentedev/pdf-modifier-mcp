@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.1.1...v1.2.0) (2026-03-08)
+
+
+### Features
+
+* **analyzer:** add hyperlink inventory support ([#41](https://github.com/mlorentedev/pdf-modifier-mcp/issues/41)) ([b072402](https://github.com/mlorentedev/pdf-modifier-mcp/commit/b07240234e96491392694964e9029ce090164aea))
+
+
+### Bug Fixes
+
+* **ci:** bypass branch protection by pushing tags manually and using --no-push ([#45](https://github.com/mlorentedev/pdf-modifier-mcp/issues/45)) ([d398e1b](https://github.com/mlorentedev/pdf-modifier-mcp/commit/d398e1ba8b0bf4ac706bb810ef393c7a66632d40))
+* **ci:** correct YAML syntax error in release workflow ([#46](https://github.com/mlorentedev/pdf-modifier-mcp/issues/46)) ([1014c2a](https://github.com/mlorentedev/pdf-modifier-mcp/commit/1014c2a0da327d593e931c5109b6d981d54cdb78))
+* **ci:** disable branch push during release to bypass strict protection ([#44](https://github.com/mlorentedev/pdf-modifier-mcp/issues/44)) ([ca35911](https://github.com/mlorentedev/pdf-modifier-mcp/commit/ca35911fd912db6a2974ed0805b9f1a8a86a6262))
+* **ci:** ensure publish-mcp job checks out the actual released tag ([#37](https://github.com/mlorentedev/pdf-modifier-mcp/issues/37)) ([b8099d5](https://github.com/mlorentedev/pdf-modifier-mcp/commit/b8099d58dbccfafd51314a8b4929bb10bb7faf2f))
+* **ci:** revert to RELEASE_TOKEN to bypass branch protection ([#39](https://github.com/mlorentedev/pdf-modifier-mcp/issues/39)) ([5e1f9a7](https://github.com/mlorentedev/pdf-modifier-mcp/commit/5e1f9a7156ae57cd66f64831eca403f4394b79b2))
+* **ci:** robust release detection and fix token usage ([#38](https://github.com/mlorentedev/pdf-modifier-mcp/issues/38)) ([849730f](https://github.com/mlorentedev/pdf-modifier-mcp/commit/849730f820adbf051d80fad6ecdd3005d2db2e34))
+* **cli:** improve hyperlink counter visibility ([#42](https://github.com/mlorentedev/pdf-modifier-mcp/issues/42)) ([8549509](https://github.com/mlorentedev/pdf-modifier-mcp/commit/85495094e2180fdb08dff4a28866607ebcbb1d5d))
+* **site:** improve UI contrast and accessible colors ([#49](https://github.com/mlorentedev/pdf-modifier-mcp/issues/49)) ([38c8e27](https://github.com/mlorentedev/pdf-modifier-mcp/commit/38c8e2722cc85ed63469a6b10f09cf47633d668d))
+
+
+### Documentation
+
+* finalize readme with latest tools and stack info ([#50](https://github.com/mlorentedev/pdf-modifier-mcp/issues/50)) ([b5aad8a](https://github.com/mlorentedev/pdf-modifier-mcp/commit/b5aad8ac60ab7b3c0dca2fa3db2388ef0a7b2a6c))
+
 ## [v1.1.1](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.1.1) (2026-03-08)
 
 
