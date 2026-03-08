@@ -42,17 +42,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Run version bump
+          # 1. Bump version locally
           semantic-release version
 
-          # Determine if a new tag was created on the current commit
-          # semantic-release version creates a new commit and tags it
+          # 2. Check if a new tag was created on current HEAD
           NEW_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "none")
 
           if [ "$NEW_TAG" != "none" ]; then
             echo "Detected new release: $NEW_TAG"
             echo "new_release=true" >> $GITHUB_OUTPUT
             echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+            # 3. Publish to VCS (push tags and metadata commits)
             semantic-release publish
           else
             echo "No new release created"
