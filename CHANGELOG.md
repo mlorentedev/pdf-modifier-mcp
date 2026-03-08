@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v1.2.0](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.2.0) (2026-03-08)
+
+
+
+### Bug fixes
+
+
+- correct YAML syntax error in release workflow ([`1014c2a`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/1014c2a0da327d593e931c5109b6d981d54cdb78))
+
+- bypass branch protection by pushing tags manually and using --no-push ([`d398e1b`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/d398e1ba8b0bf4ac706bb810ef393c7a66632d40))
+
+- disable branch push during release to bypass strict protection ([`ca35911`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/ca35911fd912db6a2974ed0805b9f1a8a86a6262))
+
+- improve hyperlink counter visibility ([`8549509`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/85495094e2180fdb08dff4a28866607ebcbb1d5d))
+
+- revert to RELEASE_TOKEN to bypass branch protection ([`5e1f9a7`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/5e1f9a7156ae57cd66f64831eca403f4394b79b2))
+
+- robust release detection and fix token usage ([`849730f`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/849730f820adbf051d80fad6ecdd3005d2db2e34))
+
+- ensure publish-mcp job checks out the actual released tag ([`b8099d5`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/b8099d58dbccfafd51314a8b4929bb10bb7faf2f))
+
+
+
+
+
+### Chores
+
+
+- stabilize release workflow logic ([`9608689`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/96086897fbc3abebdf5c493c5aa7bdb60429d499))
+
+
+
+
+
+### Features
+
+
+- add hyperlink inventory support ([`b072402`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/b07240234e96491392694964e9029ce090164aea))
+
+
+
+
+
 ## [v1.1.1](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.1.1) (2026-03-08)
 
 
