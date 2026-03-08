@@ -14,17 +14,17 @@ jobs:
       id-token: write
     outputs:
       new_release: ${{ steps.release.outputs.new_release }}
+      new_tag: ${{ steps.release.outputs.new_tag }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: 3.12
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -52,6 +52,9 @@ jobs:
             # Proceed with publish
             semantic-release publish
             echo "new_release=true" >> $GITHUB_OUTPUT
+            # Get the new version to checkout in next job
+            VERSION=$(semantic-release version --print)
+            echo "new_tag=v$VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Publish to PyPI
@@ -69,6 +72,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.new_tag }}
 
       - name: Install mcp-publisher
         run: |
