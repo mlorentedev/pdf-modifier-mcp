@@ -1,21 +1,17 @@
+/* PDF Modifier theme — Indigo/Violet accent for a modern "modifier" feel
+ * Following the accessible pattern from hive-vault.
+ */
+
 :root {
-  --sl-color-accent-low: #3b1d0e;
-  --sl-color-accent: #e44d26;
-  --sl-color-accent-high: #fdd8cc;
-  --sl-color-white: #f8f9fa;
-  --sl-color-gray-1: #eceef2;
-  --sl-color-gray-2: #c2c5cc;
-  --sl-color-gray-3: #888c96;
-  --sl-color-gray-4: #555962;
-  --sl-color-gray-5: #383a42;
-  --sl-color-gray-6: #272a2e;
-  --sl-color-black: #181a1f;
+  --sl-color-accent-low: #1e1b4b;
+  --sl-color-accent: #6366f1;
+  --sl-color-accent-high: #e0e7ff;
 }
 
 :root[data-theme='light'] {
-  --sl-color-accent-low: #fdd8cc;
-  --sl-color-accent: #d4391c;
-  --sl-color-accent-high: #3b1d0e;
+  --sl-color-accent-low: #e0e7ff;
+  --sl-color-accent: #4338ca;
+  --sl-color-accent-high: #1e1b4b;
 }
 
 /* Hero badge strip */
@@ -24,9 +20,17 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 .hero-badges img {
   height: 22px;
+}
+
+/* Fix contrast for better readability in light mode */
+:root[data-theme='light'] {
+  --sl-color-bg: #ffffff;
+  --sl-color-text: #111827;
+  --sl-color-gray-1: #1f2937;
+  --sl-color-gray-2: #374151;
 }
