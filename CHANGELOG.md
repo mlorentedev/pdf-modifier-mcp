@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v1.1.0](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.1.0) (2026-03-08)
+
+
+
+### Chores
+
+
+- fix semantic-release version_variables syntax for server.json ([`877325c`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/877325c0c35041da148531ebb6fa07711a268c74))
+
+- standardize mcp distribution and harden core ([`e7fe913`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/e7fe9134b7e714641955f7a3335fd8efa4d7b77a))
+
+
+
+
+
+### Documentation
+
+
+- add branding, badges, favicon, and improved content ([`237b166`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/237b166171cd024e0e6c4c1bd5cea71e5b83554d))
+
+- add Starlight documentation site with GitHub Pages deployment ([`d4e00a0`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/d4e00a03325c9a8ef6f3f1837ec0003dfa0f5ffc))
+
+
+
+
+
+### Features
+
+
+- add password protection support and structured json logging ([`fbab7bf`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/fbab7bffd9be5c3fb891b7cc2072898e71a46479))
+
+
+
+
+
+
+
 ## [v1.0.3](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.0.3) (2026-01-15)
 
 
