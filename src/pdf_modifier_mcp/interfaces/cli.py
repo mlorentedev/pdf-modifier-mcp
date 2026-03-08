@@ -210,7 +210,7 @@ def links(
             )
 
         console.print(table)
-        console.print(f"\n[bold]Total links found:[/] {result.total_links}")
+        console.print(f"\n[bold green]✔[/] Found [bold]{result.total_links}[/] links in total.")
 
     except PDFModifierError as e:
         console.print(f"[red]Error:[/] {e.message}")
