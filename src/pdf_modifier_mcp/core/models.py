@@ -89,6 +89,24 @@ class FontInspectionResult(BaseModel):
     total_matches: int
 
 
+class Hyperlink(BaseModel):
+    """Details of a hyperlink found in a PDF."""
+
+    page: int
+    uri: str
+    bbox: tuple[float, float, float, float]
+    text: str | None = Field(None, description="Text covered by the link area (if available)")
+
+
+class HyperlinkInventory(BaseModel):
+    """Complete inventory of hyperlinks in a PDF."""
+
+    success: bool = True
+    file_path: str
+    total_links: int
+    links: list[Hyperlink]
+
+
 class ModificationResult(BaseModel):
     """Result of PDF modification operation."""
 
