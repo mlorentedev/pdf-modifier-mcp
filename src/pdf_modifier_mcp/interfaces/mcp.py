@@ -52,7 +52,7 @@ def handle_mcp_errors(func: Callable[..., str]) -> Callable[..., str]:
 
 @mcp.tool()
 @handle_mcp_errors
-def read_pdf_structure(input_path: str) -> str:
+def read_pdf_structure(input_path: str, password: str | None = None) -> str:
     """
     Extract the complete structural content of a PDF document.
 
@@ -72,6 +72,7 @@ def read_pdf_structure(input_path: str) -> str:
     Args:
         input_path: Absolute path to the PDF file to analyze.
                    Must be a valid, accessible PDF file.
+        password: Optional password if the PDF is encrypted.
 
     Returns:
         JSON string containing the complete page structure.
@@ -80,14 +81,14 @@ def read_pdf_structure(input_path: str) -> str:
     Example:
         read_pdf_structure("/home/user/documents/invoice.pdf")
     """
-    analyzer = PDFAnalyzer(input_path)
+    analyzer = PDFAnalyzer(input_path, password=password)
     result = analyzer.get_structure()
     return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
 @handle_mcp_errors
-def inspect_pdf_fonts(input_path: str, terms: list[str]) -> str:
+def inspect_pdf_fonts(input_path: str, terms: list[str], password: str | None = None) -> str:
     """
     Search for specific text terms and report their font properties.
 
@@ -107,6 +108,7 @@ def inspect_pdf_fonts(input_path: str, terms: list[str]) -> str:
         input_path: Absolute path to the PDF file to inspect.
         terms: List of text strings to search for (1-50 terms).
                Each term is searched as a substring.
+        password: Optional password if the PDF is encrypted.
 
     Returns:
         JSON string with all matches and their font properties.
@@ -115,7 +117,7 @@ def inspect_pdf_fonts(input_path: str, terms: list[str]) -> str:
     Example:
         inspect_pdf_fonts("/path/to/doc.pdf", ["Invoice", "$99.99", "Total"])
     """
-    analyzer = PDFAnalyzer(input_path)
+    analyzer = PDFAnalyzer(input_path, password=password)
     result = analyzer.inspect_fonts(terms)
     return result.model_dump_json(indent=2)
 
@@ -127,6 +129,7 @@ def modify_pdf_content(
     output_path: str,
     replacements: dict[str, str],
     use_regex: bool = False,
+    password: str | None = None,
 ) -> str:
     """
     Find and replace text in a PDF while preserving font styles.
@@ -160,6 +163,7 @@ def modify_pdf_content(
                      Values are replacement strings (optionally with |URL).
         use_regex: If true, treat replacement keys as regex patterns.
                   Default is false for literal string matching.
+        password: Optional password if the source PDF is encrypted.
 
     Returns:
         JSON string with modification results including:
@@ -192,7 +196,7 @@ def modify_pdf_content(
         )
     """
     spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
-    modifier = PDFModifier(input_path, output_path)
+    modifier = PDFModifier(input_path, output_path, password=password)
     result = modifier.process(spec)
     return result.model_dump_json(indent=2)
 

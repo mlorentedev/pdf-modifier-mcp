@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
 import fitz
 
-from .exceptions import PDFReadError
+from ..logger import setup_logging
+from .exceptions import PDFPasswordError, PDFReadError
 from .models import (
     FontInspectionResult,
     FontMatch,
@@ -16,7 +16,7 @@ from .models import (
     TextElement,
 )
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(__name__)
 
 
 class PDFAnalyzer:
@@ -37,8 +37,24 @@ class PDFAnalyzer:
         >>> print(result.total_matches)
     """
 
-    def __init__(self, file_path: str | Path) -> None:
+    def __init__(self, file_path: str | Path, password: str | None = None) -> None:
         self.file_path = Path(file_path)
+        self.password = password
+
+    def _open_doc(self) -> fitz.Document:
+        """Safely open the document with password authentication if required."""
+        try:
+            doc = fitz.open(self.file_path)
+            if doc.needs_pass:
+                if not self.password:
+                    raise PDFPasswordError("PDF is password protected. Please provide a password.")
+                if not doc.authenticate(self.password):
+                    raise PDFPasswordError("Incorrect password provided for the PDF.")
+            return doc
+        except PDFPasswordError:
+            raise
+        except Exception as e:
+            raise PDFReadError(f"Failed to open PDF: {e}") from e
 
     def get_structure(self) -> PDFStructure:
         """
@@ -52,9 +68,10 @@ class PDFAnalyzer:
 
         Raises:
             PDFReadError: If the PDF cannot be read.
+            PDFPasswordError: If password is required but not provided or incorrect.
         """
         try:
-            with fitz.open(self.file_path) as doc:
+            with self._open_doc() as doc:
                 pages = []
                 for page_num, page in enumerate(doc, start=1):
                     elements = []
@@ -103,15 +120,18 @@ class PDFAnalyzer:
 
         Raises:
             PDFReadError: If the PDF cannot be read.
+            PDFPasswordError: If password is required but not provided or incorrect.
         """
         try:
-            with fitz.open(self.file_path) as doc:
+            with self._open_doc() as doc:
                 output = [f"Analyzed {self.file_path} with {len(doc)} pages.\n"]
                 for page_num, page in enumerate(doc, start=1):
                     output.append(f"--- Page {page_num} ---")
                     output.append(page.get_text("text"))
                     output.append("-" * 20)
                 return "\n".join(output)
+        except PDFPasswordError:
+            raise
         except Exception as e:
             raise PDFReadError(f"Failed to extract text: {e}") from e
 
@@ -129,11 +149,12 @@ class PDFAnalyzer:
 
         Raises:
             PDFReadError: If the PDF cannot be read.
+            PDFPasswordError: If password is required but not provided or incorrect.
         """
         matches: list[FontMatch] = []
 
         try:
-            with fitz.open(self.file_path) as doc:
+            with self._open_doc() as doc:
                 for page_num, page in enumerate(doc, start=1):
                     blocks = page.get_text("dict")["blocks"]
 

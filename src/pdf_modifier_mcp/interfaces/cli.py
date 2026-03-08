@@ -45,6 +45,10 @@ def modify(
         bool,
         typer.Option("--regex", help="Treat 'old' values as regex patterns"),
     ] = False,
+    password: Annotated[
+        str | None,
+        typer.Option("--password", "-p", help="Password if PDF is encrypted"),
+    ] = None,
 ) -> None:
     """
     Modify a PDF by finding and replacing text while preserving font style.
@@ -68,7 +72,11 @@ def modify(
 
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
-        modifier = PDFModifier(str(input_pdf.absolute()), str(output_pdf.absolute()))
+        modifier = PDFModifier(
+            str(input_pdf.absolute()),
+            str(output_pdf.absolute()),
+            password=password,
+        )
 
         with console.status("[bold green]Modifying PDF...", spinner="dots"):
             result = modifier.process(spec)
@@ -98,6 +106,10 @@ def analyze(
         bool,
         typer.Option("--json", "-j", help="Output as JSON structure"),
     ] = False,
+    password: Annotated[
+        str | None,
+        typer.Option("--password", "-p", help="Password if PDF is encrypted"),
+    ] = None,
 ) -> None:
     """
     Extract text or structure from a PDF.
@@ -105,7 +117,7 @@ def analyze(
     Use --json for machine-readable output with positions and fonts.
     """
     try:
-        analyzer = PDFAnalyzer(str(input_pdf.absolute()))
+        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
 
         if json_output:
             result = analyzer.get_structure()
@@ -122,6 +134,10 @@ def analyze(
 def inspect(
     input_pdf: Annotated[Path, typer.Argument(help="Path to input PDF")],
     terms: Annotated[list[str], typer.Argument(help="Terms to search for")],
+    password: Annotated[
+        str | None,
+        typer.Option("--password", "-p", help="Password if PDF is encrypted"),
+    ] = None,
 ) -> None:
     """
     Inspect font properties for specific terms in a PDF.
@@ -129,7 +145,7 @@ def inspect(
     Useful for understanding font styles before making replacements.
     """
     try:
-        analyzer = PDFAnalyzer(str(input_pdf.absolute()))
+        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
         result = analyzer.inspect_fonts(terms)
 
         if not result.matches:
