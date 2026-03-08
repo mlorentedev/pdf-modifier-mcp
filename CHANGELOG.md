@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v1.1.1](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.1.1) (2026-03-08)
+
+
+
+### Bug fixes
+
+
+- improve new release detection in release workflow ([`0dd63b0`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/0dd63b09044c90fdde7c33bfe45adfb4acec757a))
+
+
+
+
+
+### Chores
+
+
+- sync server.json to v1.1.0 and conditionalize mcp publishing ([`f297411`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/f2974117a6266c981b95aae89b746b5ac072c3e4))
+
+- fix mcp ownership comment position in README for registry validation ([`c20f5a4`](https://github.com/mlorentedev/pdf-modifier-mcp/commit/c20f5a4f88bbc386a54df0685768f1e0b89ecc42))
+
+
+
+
+
 ## [v1.1.0](https://github.com/mlorentedev/pdf-modifier-mcp/releases/tag/v1.1.0) (2026-03-08)
 
 
