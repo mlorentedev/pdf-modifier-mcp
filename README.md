@@ -72,6 +72,7 @@ That's it. You're running.
 |---|---|
 | `read_pdf_structure` | Extract complete PDF structure with text positions, sizes, and fonts |
 | `inspect_pdf_fonts` | Search for terms and report their exact font properties |
+| `list_pdf_hyperlinks` | Inventory all existing hyperlinks and URIs in the document |
 | `modify_pdf_content` | Find and replace text (or regex) with strict style and layout preservation |
 
 ### CLI Interface (For Humans)
@@ -82,6 +83,9 @@ Still want to script it yourself? The package includes a powerful Typer CLI:
 # Simple text replacement
 pdf-mod modify input.pdf output.pdf -r "old text=new text"
 
+# Inventory hyperlinks
+pdf-mod links input.pdf
+```
 # Regex replacement (dates, IDs, etc.)
 pdf-mod modify input.pdf output.pdf -r "Order #\d+=Order #REDACTED" --regex
 
