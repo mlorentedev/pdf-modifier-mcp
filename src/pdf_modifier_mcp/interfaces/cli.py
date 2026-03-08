@@ -176,6 +176,47 @@ def inspect(
         raise typer.Exit(code=1) from None
 
 
+@app.command()
+def links(
+    input_pdf: Annotated[Path, typer.Argument(help="Path to input PDF")],
+    password: Annotated[
+        str | None,
+        typer.Option("--password", "-p", help="Password if PDF is encrypted"),
+    ] = None,
+) -> None:
+    """
+    List all hyperlinks found in a PDF document.
+    """
+    try:
+        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
+        result = analyzer.get_hyperlinks()
+
+        if not result.links:
+            console.print("[yellow]No hyperlinks found.[/]")
+            return
+
+        table = Table(title=f"Hyperlink Inventory: {input_pdf.name}")
+        table.add_column("Page", style="cyan")
+        table.add_column("URI", style="green")
+        table.add_column("Text Area", style="magenta")
+
+        for link in result.links:
+            text_raw = link.text or "-"
+            text = text_raw[:50] + "..." if len(text_raw) > 50 else text_raw
+            table.add_row(
+                str(link.page),
+                link.uri,
+                text,
+            )
+
+        console.print(table)
+        console.print(f"\n[bold]Total links found:[/] {result.total_links}")
+
+    except PDFModifierError as e:
+        console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+
+
 def main() -> None:
     """Entry point for CLI."""
     app()

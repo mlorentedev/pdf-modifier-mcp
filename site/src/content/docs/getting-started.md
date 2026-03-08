@@ -96,6 +96,16 @@ pdf-mod inspect input.pdf "Invoice" "Total" "$"
 
 Output columns: Page, Term, Font, Size, Context (first 100 characters of the containing span).
 
+### List hyperlinks
+
+Inventory all existing links in the document:
+
+```bash
+pdf-mod links input.pdf
+```
+
+Output includes page number, target URI, and the text area covered by the link.
+
 ## MCP Server
 
 The MCP server exposes the same functionality over stdio for AI agent integration. **Use user scope (`-s user`) so the tools are available across all your projects.**
@@ -147,9 +157,10 @@ Any MCP-compatible client (like Cursor or Windsurf) that supports stdio transpor
 
 | Tool | Parameters | Description |
 |------|-----------|-------------|
-| `read_pdf_structure` | `input_path` | Returns complete PDF structure — text, bounding boxes, font names, sizes, colors — as JSON. Use this first to understand the document layout before making changes. |
-| `inspect_pdf_fonts` | `input_path`, `terms[]` | Searches for text terms (substring match) and returns font name, size, and position for each match. Run this before replacements to verify font handling. |
-| `modify_pdf_content` | `input_path`, `output_path`, `replacements{}`, `use_regex?` | Find and replace text with style preservation. Supports regex patterns and hyperlink syntax (`text\|URL`). Returns replacements made, pages modified, and any warnings. |
+| `read_pdf_structure` | `input_path`, `password?` | Returns complete PDF structure — text, bounding boxes, font names, sizes, colors — as JSON. Use this first to understand the document layout before making changes. |
+| `inspect_pdf_fonts` | `input_path`, `terms[]`, `password?` | Searches for text terms (substring match) and returns font name, size, and position for each match. Run this before replacements to verify font handling. |
+| `list_pdf_hyperlinks` | `input_path`, `password?` | Extracts all existing hyperlinks and URIs from the document, including their location and covered text. |
+| `modify_pdf_content` | `input_path`, `output_path`, `replacements{}`, `use_regex?`, `password?` | Find and replace text with style preservation. Supports regex patterns and hyperlink syntax (`text\|URL`). Returns replacements made, pages modified, and any warnings. |
 
 All tools return structured JSON. Errors include a typed error code (`FILE_NOT_FOUND`, `READ_ERROR`, `WRITE_ERROR`), a human-readable message, and a details object.
 

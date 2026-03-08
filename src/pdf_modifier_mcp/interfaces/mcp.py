@@ -201,6 +201,31 @@ def modify_pdf_content(
     return result.model_dump_json(indent=2)
 
 
+@mcp.tool()
+@handle_mcp_errors
+def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
+    """
+    Extract all existing hyperlinks and clickable URIs from a PDF.
+
+    Use this tool to inventory the links in a document before or after
+    making modifications. It reports the target URI, its location (bbox),
+    and the text covered by the link if detectable.
+
+    Args:
+        input_path: Absolute path to the PDF file to scan.
+        password: Optional password if the PDF is encrypted.
+
+    Returns:
+        JSON string with the inventory of found hyperlinks.
+
+    Example:
+        list_pdf_hyperlinks("/path/to/report.pdf")
+    """
+    analyzer = PDFAnalyzer(input_path, password=password)
+    result = analyzer.get_hyperlinks()
+    return result.model_dump_json(indent=2)
+
+
 def main() -> None:
     """Run the MCP server with stdio transport."""
     mcp.run()

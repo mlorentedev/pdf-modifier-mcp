@@ -11,6 +11,8 @@ from .exceptions import PDFPasswordError, PDFReadError
 from .models import (
     FontInspectionResult,
     FontMatch,
+    Hyperlink,
+    HyperlinkInventory,
     PageStructure,
     PDFStructure,
     TextElement,
@@ -186,3 +188,41 @@ class PDFAnalyzer:
 
         except Exception as e:
             raise PDFReadError(f"Failed to inspect fonts: {e}") from e
+
+    def get_hyperlinks(self) -> HyperlinkInventory:
+        """
+        Extract all hyperlinks from the document.
+
+        Returns:
+            HyperlinkInventory containing all found URIs and their locations.
+
+        Raises:
+            PDFReadError: If the PDF cannot be read.
+            PDFPasswordError: If password is required but not provided or incorrect.
+        """
+        links: list[Hyperlink] = []
+
+        try:
+            with self._open_doc() as doc:
+                for page_num, page in enumerate(doc, start=1):
+                    for link in page.get_links():
+                        if "uri" in link:
+                            # Try to find text under the link's bbox
+                            text = page.get_textbox(link["from"])
+                            links.append(
+                                Hyperlink(
+                                    page=page_num,
+                                    uri=link["uri"],
+                                    bbox=tuple(link["from"]),  # type: ignore[arg-type]
+                                    text=text.strip() if text else None,
+                                )
+                            )
+
+            return HyperlinkInventory(
+                file_path=str(self.file_path),
+                total_links=len(links),
+                links=links,
+            )
+
+        except Exception as e:
+            raise PDFReadError(f"Failed to extract hyperlinks: {e}") from e
