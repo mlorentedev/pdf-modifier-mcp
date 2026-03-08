@@ -5,74 +5,43 @@ on:
     branches:
       - master
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    concurrency: release
-    permissions:
-      contents: write
-      id-token: write
-    outputs:
-      new_release: ${{ steps.release.outputs.new_release }}
-      new_tag: ${{ steps.release.outputs.new_tag }}
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.0.0
-
-      - name: Install Python Semantic Release
-        run: pip install python-semantic-release
-
-      - name: Semantic Release
-        id: release
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 1. Bump version and create tag locally (DO NOT PUSH TO MASTER)
-          # We use --no-push to avoid GH006 Protected Branch error
-          semantic-release version --no-push
-
-          # 2. Check if a new tag was created
-          NEW_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "none")
-
-          if [ "$NEW_TAG" != "none" ]; then
-            echo "Detected new release: $NEW_TAG"
-            echo "new_release=true" >> $GITHUB_OUTPUT
-            echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
-
-            # 3. Push ONLY the tag (Tags are usually not blocked by branch protection)
-            git push origin "$NEW_TAG"
-
-            # 4. Create GitHub Release and upload artifacts
-            semantic-release publish
-          else
-            echo "No new release created"
-            echo "new_release=false" >> $GITHUB_OUTPUT
-          fi
-
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - run: uv build
       - name: Publish to PyPI
-        if: hashFiles('dist/*.whl') != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
 
   publish-mcp:
-    needs: release
-    if: needs.release.outputs.new_release == 'true'
+    needs: [release-please, publish]
+    if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -80,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.release.outputs.new_tag }}
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: Install mcp-publisher
         run: |
