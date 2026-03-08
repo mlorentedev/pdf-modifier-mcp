@@ -17,6 +17,9 @@ from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
 from ..core.modifier import PDFModifier
+from ..logger import setup_logging
+
+logger = setup_logging(__name__)
 
 app = typer.Typer(
     name="pdf-mod",
@@ -66,7 +69,9 @@ def modify(
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
         modifier = PDFModifier(str(input_pdf.absolute()), str(output_pdf.absolute()))
-        result = modifier.process(spec)
+
+        with console.status("[bold green]Modifying PDF...", spinner="dots"):
+            result = modifier.process(spec)
 
         console.print(f"[green]Success:[/] Saved to {result.output_path}")
         console.print(f"  Replacements: {result.replacements_made}")
@@ -77,7 +82,12 @@ def modify(
                 console.print(f"[yellow]Warning:[/] {warn}")
 
     except PDFModifierError as e:
+        logger.error(f"Modification error: {e.message}")
         console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error in CLI modify")
+        console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
         raise typer.Exit(code=1) from None
 
 

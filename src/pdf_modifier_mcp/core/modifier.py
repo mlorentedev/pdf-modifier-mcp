@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-import logging
-import re
 from pathlib import Path
 from typing import Any
 
 import fitz
 
+from ..logger import setup_logging
 from .exceptions import PDFReadError, PDFWriteError
 from .models import ModificationResult, ReplacementSpec
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(__name__)
 
 
 class PDFModifier:
@@ -37,8 +36,12 @@ class PDFModifier:
     """
 
     def __init__(self, input_path: str | Path, output_path: str | Path) -> None:
-        self.input_path = Path(input_path)
-        self.output_path = Path(output_path)
+        self.input_path = Path(input_path).absolute()
+        self.output_path = Path(output_path).absolute()
+
+        if self.input_path == self.output_path:
+            raise ValueError("Input and output paths cannot be the same. Risk of file corruption.")
+
         self._doc: fitz.Document | None = None
         self._warnings: list[str] = []
 
@@ -74,9 +77,11 @@ class PDFModifier:
             PDFReadError: If the PDF cannot be opened.
             PDFWriteError: If the output cannot be saved.
         """
+        doc_opened_here = False
         if not self._doc:
             try:
                 self._doc = fitz.open(self.input_path)
+                doc_opened_here = True
             except Exception as e:
                 raise PDFReadError(f"Cannot open PDF: {e}") from e
 
@@ -85,7 +90,7 @@ class PDFModifier:
 
         try:
             for page_num, page in enumerate(self._doc):
-                items = self._collect_replacements(page, spec.replacements, spec.use_regex)
+                items = self._collect_replacements(page, spec)
 
                 if not items:
                     continue
@@ -115,7 +120,8 @@ class PDFModifier:
         except Exception as e:
             raise PDFWriteError(f"Failed to process/save PDF: {e}") from e
         finally:
-            self.close()
+            if doc_opened_here:
+                self.close()
 
         return ModificationResult(
             success=True,
@@ -163,8 +169,7 @@ class PDFModifier:
     def _collect_replacements(
         self,
         page: fitz.Page,
-        replacements: dict[str, str],
-        use_regex: bool,
+        spec: ReplacementSpec,
     ) -> list[dict[str, Any]]:
         """Scan page and collect items to replace."""
         items: list[dict[str, Any]] = []
@@ -178,10 +183,11 @@ class PDFModifier:
                     text = span["text"].strip()
                     original = span["text"]
 
-                    for target, replacement_raw in replacements.items():
+                    for target, replacement_raw in spec.replacements.items():
                         match_found = False
-                        if use_regex:
-                            if re.search(target, text):
+                        if spec.use_regex and spec.compiled_patterns:
+                            pattern = spec.compiled_patterns[target]
+                            if pattern.search(text):
                                 match_found = True
                         elif target in text:
                             match_found = True
@@ -207,8 +213,9 @@ class PDFModifier:
 
                             font_code, font_std = self._get_font_properties(span["font"])
 
-                            if use_regex:
-                                new_text = re.sub(target, replacement_text, original)
+                            if spec.use_regex and spec.compiled_patterns:
+                                pattern = spec.compiled_patterns[target]
+                                new_text = pattern.sub(replacement_text, original)
                             else:
                                 new_text = original.replace(target, replacement_text)
 

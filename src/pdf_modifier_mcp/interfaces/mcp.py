@@ -8,7 +8,6 @@ Uses FastMCP with stdio transport for Claude Desktop integration.
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
@@ -19,12 +18,9 @@ from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
 from ..core.modifier import PDFModifier
+from ..logger import setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging(__name__)
 
 mcp = FastMCP(
     "pdf-modifier-mcp",

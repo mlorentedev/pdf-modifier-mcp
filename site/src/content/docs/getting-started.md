@@ -98,44 +98,50 @@ Output columns: Page, Term, Font, Size, Context (first 100 characters of the con
 
 ## MCP Server
 
-The MCP server exposes the same functionality over stdio for AI agent integration.
+The MCP server exposes the same functionality over stdio for AI agent integration. **Use user scope (`-s user`) so the tools are available across all your projects.**
 
-### Start the server
+### Claude Code
 
 ```bash
-pdf-modifier-mcp
+claude mcp add -s user pdf-modifier -- uvx --upgrade pdf-modifier-mcp
 ```
 
-### Claude Desktop
+### Gemini CLI
 
-Add to `~/.config/claude/claude_desktop_config.json`:
+```bash
+gemini mcp add -s user pdf-modifier uvx -- --upgrade pdf-modifier-mcp
+```
+
+### OpenAI Codex CLI
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.pdf-modifier]
+command = "uvx"
+args = ["--upgrade", "pdf-modifier-mcp"]
+```
+
+### GitHub Copilot (VS Code)
+
+Add to `.vscode/mcp.json` or your User Settings:
 
 ```json
 {
-  "mcpServers": {
-    "pdf-modifier": {
-      "command": "pdf-modifier-mcp"
+  "mcp": {
+    "servers": {
+      "pdf-modifier": {
+        "command": "uvx",
+        "args": ["--upgrade", "pdf-modifier-mcp"]
+      }
     }
   }
 }
 ```
 
-Or run from PyPI without a local install:
+### Other Clients
 
-```json
-{
-  "mcpServers": {
-    "pdf-modifier": {
-      "command": "uvx",
-      "args": ["pdf-modifier-mcp"]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add an MCP server in Cursor settings with `pdf-modifier-mcp` as the command. Any MCP-compatible client that supports stdio transport will work.
+Any MCP-compatible client (like Cursor or Windsurf) that supports stdio transport will work. Point the client to `uvx --upgrade pdf-modifier-mcp`.
 
 ### Available tools
 

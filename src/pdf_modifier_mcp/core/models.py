@@ -18,16 +18,21 @@ class ReplacementSpec(BaseModel):
         description="Map of 'old text' -> 'new text'. Use 'text|URL' for hyperlinks.",
     )
     use_regex: bool = Field(default=False, description="Treat keys as regex patterns")
+    compiled_patterns: dict[str, re.Pattern[str]] | None = Field(
+        default=None, description="Pre-compiled regex patterns (internal use)", exclude=True
+    )
 
     @model_validator(mode="after")
     def validate_regex_patterns(self) -> ReplacementSpec:
-        """Validate regex patterns if use_regex is enabled."""
+        """Validate regex patterns if use_regex is enabled and pre-compile them."""
         if self.use_regex:
+            compiled = {}
             for pattern in self.replacements:
                 try:
-                    re.compile(pattern)
+                    compiled[pattern] = re.compile(pattern)
                 except re.error as e:
                     raise ValueError(f"Invalid regex '{pattern}': {e}") from e
+            self.compiled_patterns = compiled
         return self
 
 
