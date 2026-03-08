@@ -43,6 +43,12 @@ class PDFWriteError(PDFModifierError):
     code = "WRITE_ERROR"
 
 
+class PDFPasswordError(PDFModifierError):
+    """Raised when a PDF requires a password but none (or an incorrect one) was provided."""
+
+    code = "PASSWORD_ERROR"
+
+
 class InvalidPatternError(PDFModifierError):
     """Regex pattern is invalid."""
 

@@ -8,7 +8,7 @@ from typing import Any
 import fitz
 
 from ..logger import setup_logging
-from .exceptions import PDFReadError, PDFWriteError
+from .exceptions import PDFPasswordError, PDFReadError, PDFWriteError
 from .models import ModificationResult, ReplacementSpec
 
 logger = setup_logging(__name__)
@@ -35,9 +35,15 @@ class PDFModifier:
         ...     result = modifier.process(spec)
     """
 
-    def __init__(self, input_path: str | Path, output_path: str | Path) -> None:
+    def __init__(
+        self,
+        input_path: str | Path,
+        output_path: str | Path,
+        password: str | None = None,
+    ) -> None:
         self.input_path = Path(input_path).absolute()
         self.output_path = Path(output_path).absolute()
+        self.password = password
 
         if self.input_path == self.output_path:
             raise ValueError("Input and output paths cannot be the same. Risk of file corruption.")
@@ -45,11 +51,23 @@ class PDFModifier:
         self._doc: fitz.Document | None = None
         self._warnings: list[str] = []
 
-    def __enter__(self) -> PDFModifier:
+    def _open_doc(self) -> fitz.Document:
+        """Safely open the document with password authentication if required."""
         try:
-            self._doc = fitz.open(self.input_path)
+            doc = fitz.open(self.input_path)
+            if doc.needs_pass:
+                if not self.password:
+                    raise PDFPasswordError("PDF is password protected. Please provide a password.")
+                if not doc.authenticate(self.password):
+                    raise PDFPasswordError("Incorrect password provided for the PDF.")
+            return doc
+        except PDFPasswordError:
+            raise
         except Exception as e:
             raise PDFReadError(f"Cannot open PDF: {e}", {"path": str(self.input_path)}) from e
+
+    def __enter__(self) -> PDFModifier:
+        self._doc = self._open_doc()
         return self
 
     def __exit__(self, *args: Any) -> None:
@@ -79,11 +97,8 @@ class PDFModifier:
         """
         doc_opened_here = False
         if not self._doc:
-            try:
-                self._doc = fitz.open(self.input_path)
-                doc_opened_here = True
-            except Exception as e:
-                raise PDFReadError(f"Cannot open PDF: {e}") from e
+            self._doc = self._open_doc()
+            doc_opened_here = True
 
         total_replacements = 0
         pages_modified: set[int] = set()

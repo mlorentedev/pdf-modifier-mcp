@@ -1,6 +1,21 @@
+import json
 import logging
+from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        log_data = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "name": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_data)
 
 
 def setup_logging(name: str) -> logging.Logger:
@@ -12,8 +27,7 @@ def setup_logging(name: str) -> logging.Logger:
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        handler.setFormatter(formatter)
+        handler.setFormatter(JsonFormatter())
         logger.addHandler(handler)
 
     return logger
