@@ -53,10 +53,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. Bump version locally
-          semantic-release version
+          # 1. Bump version and create tag locally (DO NOT PUSH TO MASTER)
+          # We use --no-push to avoid GH006 Protected Branch error
+          semantic-release version --no-push
 
-          # 2. Check if a new tag was created on current HEAD
+          # 2. Check if a new tag was created
           NEW_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "none")
 
           if [ "$NEW_TAG" != "none" ]; then
@@ -64,13 +65,15 @@ jobs:
             echo "new_release=true" >> $GITHUB_OUTPUT
             echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-            # 3. Publish to VCS (push tags and metadata commits)
+            # 3. Push ONLY the tag (Tags are usually not blocked by branch protection)
+            git push origin "$NEW_TAG"
+
+            # 4. Create GitHub Release and upload artifacts
             semantic-release publish
           else
             echo "No new release created"
             echo "new_release=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Publish to PyPI
+          fi      - name: Publish to PyPI
         if: hashFiles('dist/*.whl') != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
