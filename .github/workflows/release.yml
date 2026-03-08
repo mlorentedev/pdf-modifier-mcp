@@ -34,6 +34,14 @@ jobs:
       - name: Install Python Semantic Release
         run: pip install python-semantic-release
 
+      - name: Debug Token Identity
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          echo "Checking token identity..."
+          gh auth status
+          gh api user -q ".login"
+
       - name: Semantic Release
         id: release
         env:
