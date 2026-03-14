@@ -1,8 +1,13 @@
 """Tests for hyperlink extraction."""
 
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import fitz
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from pdf_modifier_mcp.core import PDFAnalyzer
 from pdf_modifier_mcp.core.models import HyperlinkInventory

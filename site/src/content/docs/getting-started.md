@@ -17,7 +17,7 @@ Or run directly without installing (requires [uv](https://docs.astral.sh/uv/)):
 uvx pdf-modifier-mcp
 ```
 
-Requires **Python 3.10** or later.
+Requires **Python 3.12** or later.
 
 To install from source:
 

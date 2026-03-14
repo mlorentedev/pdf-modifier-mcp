@@ -35,7 +35,7 @@ run-cli: ## Run CLI (usage: make run-cli ARGS="--help")
 check: lint type test ## Run all quality checks
 
 test: ## Run tests with coverage
-	@$(UV) run pytest --cov=src --cov-report=term-missing
+	@$(UV) run pytest --cov=src --cov-report=term-missing --cov-report=xml
 
 lint: ## Run ruff linter
 	@$(UV) run ruff check src/ tests/

@@ -6,12 +6,17 @@ Tests cover:
 - Error handling and edge cases
 """
 
+from __future__ import annotations
+
 import json
 import subprocess
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pdf_modifier_mcp.core import PDFAnalyzer, PDFModifier, ReplacementSpec
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from ..conftest import EXAMPLES_OUTPUT_DIR, SAMPLE_PDF
 

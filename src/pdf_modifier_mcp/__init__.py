@@ -4,6 +4,8 @@ PDF Modifier MCP - A dual-interface PDF modification tool.
 Provides both CLI (pdf-mod) and MCP server interfaces for PDF manipulation.
 """
 
+from __future__ import annotations
+
 from importlib.metadata import version
 
 from .core import (

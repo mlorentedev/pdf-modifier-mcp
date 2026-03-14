@@ -1,15 +1,16 @@
 """Tests for custom exceptions."""
 
+from __future__ import annotations
+
 import pytest
 
 from pdf_modifier_mcp.core.exceptions import (
-    FileSizeError,
     InvalidPatternError,
     PDFModifierError,
     PDFNotFoundError,
+    PDFPasswordError,
     PDFReadError,
     PDFWriteError,
-    TextNotFoundError,
 )
 
 
@@ -32,18 +33,16 @@ class TestExceptions:
         assert PDFNotFoundError("x").code == "FILE_NOT_FOUND"
         assert PDFReadError("x").code == "READ_ERROR"
         assert PDFWriteError("x").code == "WRITE_ERROR"
+        assert PDFPasswordError("x").code == "PASSWORD_ERROR"
         assert InvalidPatternError("x").code == "INVALID_PATTERN"
-        assert TextNotFoundError("x").code == "TEXT_NOT_FOUND"
-        assert FileSizeError("x").code == "FILE_TOO_LARGE"
 
     def test_all_inherit_from_base(self) -> None:
         exceptions = [
             PDFNotFoundError,
             PDFReadError,
             PDFWriteError,
+            PDFPasswordError,
             InvalidPatternError,
-            TextNotFoundError,
-            FileSizeError,
         ]
         for exc_class in exceptions:
             assert isinstance(exc_class("Test"), PDFModifierError)

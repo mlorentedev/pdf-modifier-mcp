@@ -1,12 +1,18 @@
 """Tests for CLI interface."""
 
-from pathlib import Path
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import fitz
 from typer.testing import CliRunner
 
 from pdf_modifier_mcp.interfaces.cli import app
 
 from ...conftest import SAMPLE_PDF
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 runner = CliRunner()
 
@@ -38,6 +44,23 @@ class TestCLIModify:
         )
         assert result.exit_code == 0
 
+    def test_multiple_replacements(self, tmp_path: Path) -> None:
+        output_pdf = tmp_path / "output.pdf"
+        result = runner.invoke(
+            app,
+            [
+                "modify",
+                str(SAMPLE_PDF),
+                str(output_pdf),
+                "-r",
+                "$27.99=$99.99",
+                "-r",
+                "BrosTrend=TestBrand",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Success" in result.stdout
+
     def test_invalid_format_error(self, tmp_path: Path) -> None:
         output_pdf = tmp_path / "output.pdf"
         result = runner.invoke(app, ["modify", str(SAMPLE_PDF), str(output_pdf), "-r", "no_equals"])
@@ -49,6 +72,14 @@ class TestCLIModify:
             ["modify", str(tmp_path / "missing.pdf"), str(tmp_path / "out.pdf"), "-r", "a=b"],
         )
         assert result.exit_code == 1
+
+    def test_shows_warnings(self, tmp_path: Path) -> None:
+        output_pdf = tmp_path / "output.pdf"
+        result = runner.invoke(
+            app, ["modify", str(SAMPLE_PDF), str(output_pdf), "-r", "$27.99=$99.99"]
+        )
+        assert result.exit_code == 0
+        assert "Replacements:" in result.stdout
 
 
 class TestCLIAnalyze:
@@ -78,6 +109,35 @@ class TestCLIInspect:
         assert "No matches" in result.stdout
 
 
+class TestCLILinks:
+    """Tests for CLI links command."""
+
+    def test_no_links_message(self, tmp_path: Path) -> None:
+        pdf_path = tmp_path / "no_links.pdf"
+        doc = fitz.open()
+        doc.new_page()
+        doc.save(str(pdf_path))
+        doc.close()
+
+        result = runner.invoke(app, ["links", str(pdf_path)])
+        assert result.exit_code == 0
+        assert "No hyperlinks" in result.stdout
+
+    def test_with_links(self, tmp_path: Path) -> None:
+        pdf_path = tmp_path / "with_links.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((100, 100), "Click")
+        link_rect = fitz.Rect(95, 90, 200, 110)
+        page.insert_link({"from": link_rect, "uri": "https://example.com", "kind": fitz.LINK_URI})
+        doc.save(str(pdf_path))
+        doc.close()
+
+        result = runner.invoke(app, ["links", str(pdf_path)])
+        assert result.exit_code == 0
+        assert "https://example.com" in result.stdout
+
+
 class TestCLIHelp:
     """Tests for CLI help."""
 
@@ -86,3 +146,5 @@ class TestCLIHelp:
         assert result.exit_code == 0
         assert "modify" in result.stdout
         assert "analyze" in result.stdout
+        assert "inspect" in result.stdout
+        assert "links" in result.stdout

@@ -4,16 +4,15 @@ version = "1.1.1"
 description = "PDF modification tool with CLI and MCP interfaces for AI agents."
 authors = [{name = "Manu", email = "mlorentedev@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = ["pdf", "mcp", "claude", "ai", "modification"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: General",
 ]
 dependencies = [
@@ -26,7 +25,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
@@ -51,25 +49,30 @@ packages = ["src/pdf_modifier_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_mode = "auto"
-addopts = ["-v"]
+addopts = ["-v", "--cov-fail-under=80"]
 
 [tool.mypy]
-python_version = "3.10"
-strict = false
-warn_return_any = true
-warn_unused_configs = true
+python_version = "3.12"
+strict = true
 
 [[tool.mypy.overrides]]
 module = ["fitz", "fastmcp.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["pdf_modifier_mcp.interfaces.mcp", "tests.*"]
+disable_error_code = ["misc"]
+
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "A", "TCH"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/pdf_modifier_mcp/interfaces/cli.py" = ["TCH003"]
+"src/pdf_modifier_mcp/interfaces/mcp.py" = ["TCH003"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pdf_modifier_mcp"]
