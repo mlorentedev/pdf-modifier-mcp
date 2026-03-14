@@ -28,7 +28,7 @@ import { Card, CardGrid, LinkCard, Badge } from '@astrojs/starlight/components';
     <img src="https://img.shields.io/pypi/v/pdf-modifier-mcp" alt="PyPI" />
   </a>
   <a href="https://www.python.org/downloads/">
-    <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+" />
+    <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+" />
   </a>
   <a href="https://mlorentedev.github.io/pdf-modifier-mcp/">
     <img src="https://img.shields.io/badge/docs-live-blue.svg" alt="Docs" />
@@ -61,7 +61,7 @@ pip install pdf-modifier-mcp
 
 <CardGrid>
   <Card title="MCP Server" icon="puzzle">
-    Three tools for AI agents: `read_pdf_structure`, `inspect_pdf_fonts`, `modify_pdf_content`.
+    Four tools for AI agents: `read_pdf_structure`, `inspect_pdf_fonts`, `modify_pdf_content`, `list_pdf_hyperlinks`.
     Works with Claude Desktop, Cursor, and any MCP-compatible client.
     Structured JSON responses with typed error codes.
   </Card>
@@ -102,6 +102,7 @@ pdf-mod analyze invoice.pdf --json
 |------|-------------|
 | `read_pdf_structure` | Returns every text span with position, font, size, and color as JSON |
 | `inspect_pdf_fonts` | Searches for terms and reports font properties — useful before replacements |
+| `list_pdf_hyperlinks` | Extracts all existing hyperlinks and URIs from the document |
 | `modify_pdf_content` | Find and replace with style preservation, regex, and hyperlink support |
 
 ## Architecture

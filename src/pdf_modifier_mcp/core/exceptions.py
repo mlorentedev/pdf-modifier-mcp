@@ -53,15 +53,3 @@ class InvalidPatternError(PDFModifierError):
     """Regex pattern is invalid."""
 
     code = "INVALID_PATTERN"
-
-
-class TextNotFoundError(PDFModifierError):
-    """Specified text was not found in document."""
-
-    code = "TEXT_NOT_FOUND"
-
-
-class FileSizeError(PDFModifierError):
-    """File exceeds size limit."""
-
-    code = "FILE_TOO_LARGE"

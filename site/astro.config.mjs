@@ -50,6 +50,19 @@ export default defineConfig({
       sidebar: [
         { label: 'Home', slug: '' },
         { label: 'Getting Started', slug: 'getting-started' },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Troubleshooting', slug: 'guides/troubleshooting' },
+          ],
+        },
+        {
+          label: 'Reference',
+          items: [
+            { label: 'MCP Tools', slug: 'tools' },
+            { label: 'Architecture', slug: 'reference/architecture' },
+          ],
+        },
       ],
     }),
   ],

@@ -4,7 +4,8 @@
 
 [![CI](https://github.com/mlorentedev/pdf-modifier-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mlorentedev/pdf-modifier-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/pdf-modifier-mcp)](https://pypi.org/project/pdf-modifier-mcp/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![codecov](https://codecov.io/gh/mlorentedev/pdf-modifier-mcp/graph/badge.svg)](https://codecov.io/gh/mlorentedev/pdf-modifier-mcp)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Docs](https://img.shields.io/badge/docs-live-blue.svg)](https://mlorentedev.github.io/pdf-modifier-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

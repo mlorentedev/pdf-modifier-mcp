@@ -126,7 +126,12 @@ def analyze(
             console.print(analyzer.extract_text())
 
     except PDFModifierError as e:
+        logger.error("Analysis error: %s", e.message)
         console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error in CLI analyze")
+        console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
         raise typer.Exit(code=1) from None
 
 
@@ -172,7 +177,12 @@ def inspect(
         console.print(table)
 
     except PDFModifierError as e:
+        logger.error("Inspection error: %s", e.message)
         console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error in CLI inspect")
+        console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
         raise typer.Exit(code=1) from None
 
 
@@ -213,7 +223,12 @@ def links(
         console.print(f"\n[bold green]✔[/] Found [bold]{result.total_links}[/] links in total.")
 
     except PDFModifierError as e:
+        logger.error("Links error: %s", e.message)
         console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error in CLI links")
+        console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
         raise typer.Exit(code=1) from None
 
 

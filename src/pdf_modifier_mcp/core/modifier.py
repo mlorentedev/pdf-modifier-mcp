@@ -8,7 +8,7 @@ from typing import Any
 import fitz
 
 from ..logger import setup_logging
-from .exceptions import PDFPasswordError, PDFReadError, PDFWriteError
+from .exceptions import PDFModifierError, PDFPasswordError, PDFReadError, PDFWriteError
 from .models import ModificationResult, ReplacementSpec
 
 logger = setup_logging(__name__)
@@ -123,7 +123,12 @@ class PDFModifier:
                 for item in items:
                     self._insert_replacement(page, item)
                     total_replacements += 1
+        except PDFModifierError:
+            raise
+        except Exception as e:
+            raise PDFReadError(f"Failed to process PDF pages: {e}") from e
 
+        try:
             self._doc.save(str(self.output_path))
             logger.info(
                 "Saved %s with %d replacements across %d pages",
@@ -131,9 +136,8 @@ class PDFModifier:
                 total_replacements,
                 len(pages_modified),
             )
-
         except Exception as e:
-            raise PDFWriteError(f"Failed to process/save PDF: {e}") from e
+            raise PDFWriteError(f"Failed to save PDF: {e}") from e
         finally:
             if doc_opened_here:
                 self.close()
@@ -289,4 +293,6 @@ class PDFModifier:
                     }
                 )
             except Exception as e:
-                self._warnings.append(f"Could not add link for '{item['text']}': {e}")
+                msg = f"Could not add link for '{item['text']}': {e}"
+                logger.warning(msg)
+                self._warnings.append(msg)

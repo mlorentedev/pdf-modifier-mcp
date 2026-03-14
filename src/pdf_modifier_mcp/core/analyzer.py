@@ -87,8 +87,8 @@ class PDFAnalyzer:
                                 elements.append(
                                     TextElement(
                                         text=span["text"],
-                                        bbox=tuple(span["bbox"]),  # type: ignore[arg-type]
-                                        origin=tuple(span["origin"]),  # type: ignore[arg-type]
+                                        bbox=tuple(span["bbox"]),
+                                        origin=tuple(span["origin"]),
                                         font=span["font"],
                                         size=span["size"],
                                         color=span["color"],
@@ -110,6 +110,8 @@ class PDFAnalyzer:
                     pages=pages,
                 )
 
+        except PDFPasswordError:
+            raise
         except Exception as e:
             raise PDFReadError(f"Failed to analyze PDF: {e}", {"path": str(self.file_path)}) from e
 
@@ -135,7 +137,7 @@ class PDFAnalyzer:
         except PDFPasswordError:
             raise
         except Exception as e:
-            raise PDFReadError(f"Failed to extract text: {e}") from e
+            raise PDFReadError(f"Failed to extract text: {e}", {"path": str(self.file_path)}) from e
 
     def inspect_fonts(self, terms: list[str]) -> FontInspectionResult:
         """
@@ -175,7 +177,7 @@ class PDFAnalyzer:
                                                 context=text[:100],
                                                 font=span["font"],
                                                 size=span["size"],
-                                                origin=tuple(span["origin"]),  # type: ignore[arg-type]
+                                                origin=tuple(span["origin"]),
                                             )
                                         )
 
@@ -186,8 +188,12 @@ class PDFAnalyzer:
                 total_matches=len(matches),
             )
 
+        except PDFPasswordError:
+            raise
         except Exception as e:
-            raise PDFReadError(f"Failed to inspect fonts: {e}") from e
+            raise PDFReadError(
+                f"Failed to inspect fonts: {e}", {"path": str(self.file_path)}
+            ) from e
 
     def get_hyperlinks(self) -> HyperlinkInventory:
         """
@@ -213,7 +219,7 @@ class PDFAnalyzer:
                                 Hyperlink(
                                     page=page_num,
                                     uri=link["uri"],
-                                    bbox=tuple(link["from"]),  # type: ignore[arg-type]
+                                    bbox=tuple(link["from"]),
                                     text=text.strip() if text else None,
                                 )
                             )
@@ -224,5 +230,9 @@ class PDFAnalyzer:
                 links=links,
             )
 
+        except PDFPasswordError:
+            raise
         except Exception as e:
-            raise PDFReadError(f"Failed to extract hyperlinks: {e}") from e
+            raise PDFReadError(
+                f"Failed to extract hyperlinks: {e}", {"path": str(self.file_path)}
+            ) from e

@@ -1,14 +1,15 @@
 """Core business logic for PDF modification."""
 
+from __future__ import annotations
+
 from .analyzer import PDFAnalyzer
 from .exceptions import (
-    FileSizeError,
     InvalidPatternError,
     PDFModifierError,
     PDFNotFoundError,
+    PDFPasswordError,
     PDFReadError,
     PDFWriteError,
-    TextNotFoundError,
 )
 from .models import (
     FontInspectionResult,
@@ -34,11 +35,10 @@ __all__ = [
     "ReplacementSpec",
     "TextElement",
     # Exceptions
-    "FileSizeError",
     "InvalidPatternError",
     "PDFModifierError",
     "PDFNotFoundError",
+    "PDFPasswordError",
     "PDFReadError",
     "PDFWriteError",
-    "TextNotFoundError",
 ]

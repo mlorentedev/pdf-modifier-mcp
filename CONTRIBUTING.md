@@ -32,21 +32,21 @@ make run-mcp
 | `make build` | Build distribution artifacts |
 | `make clean` | Remove build artifacts |
 
-### Manual Commands (Poetry)
+### Manual Commands (uv)
 
 ```bash
 # Install with dev dependencies
-poetry install
+uv sync --all-extras
 
 # Run tests
-poetry run pytest
+uv run pytest
 
 # Run with coverage
-poetry run pytest --cov=src --cov-report=term-missing
+uv run pytest --cov=src --cov-report=term-missing
 
 # Linting and type checking
-poetry run ruff check src/
-poetry run mypy src/
+uv run ruff check src/
+uv run mypy src/
 ```
 
 ## Git Workflow
