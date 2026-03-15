@@ -8,10 +8,19 @@ from typing import Any
 import fitz
 
 from ..logger import setup_logging
-from .exceptions import PDFModifierError, PDFPasswordError, PDFReadError, PDFWriteError
+from .exceptions import (
+    FileSizeExceededError,
+    PDFModifierError,
+    PDFNotFoundError,
+    PDFPasswordError,
+    PDFReadError,
+    PDFWriteError,
+)
 from .models import ModificationResult, ReplacementSpec
 
 logger = setup_logging(__name__)
+
+DEFAULT_MAX_FILE_SIZE_BYTES: int = 100 * 1024 * 1024  # 100 MB
 
 
 class PDFModifier:
@@ -40,10 +49,12 @@ class PDFModifier:
         input_path: str | Path,
         output_path: str | Path,
         password: str | None = None,
+        max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
     ) -> None:
         self.input_path = Path(input_path).absolute()
         self.output_path = Path(output_path).absolute()
         self.password = password
+        self.max_file_size = max_file_size
 
         if self.input_path == self.output_path:
             raise ValueError("Input and output paths cannot be the same. Risk of file corruption.")
@@ -53,6 +64,25 @@ class PDFModifier:
 
     def _open_doc(self) -> fitz.Document:
         """Safely open the document with password authentication if required."""
+        if not self.input_path.exists():
+            raise PDFNotFoundError(
+                f"PDF file not found: {self.input_path}",
+                {"path": str(self.input_path)},
+            )
+
+        file_size = self.input_path.stat().st_size
+        if file_size > self.max_file_size:
+            size_mb = file_size / (1024 * 1024)
+            limit_mb = self.max_file_size / (1024 * 1024)
+            raise FileSizeExceededError(
+                f"PDF file is {size_mb:.1f} MB, exceeds limit of {limit_mb:.0f} MB",
+                {
+                    "path": str(self.input_path),
+                    "size_bytes": file_size,
+                    "limit_bytes": self.max_file_size,
+                },
+            )
+
         try:
             doc = fitz.open(self.input_path)
             if doc.needs_pass:

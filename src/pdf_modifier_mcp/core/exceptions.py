@@ -49,6 +49,12 @@ class PDFPasswordError(PDFModifierError):
     code = "PASSWORD_ERROR"
 
 
+class FileSizeExceededError(PDFModifierError):
+    """PDF file exceeds the maximum allowed size."""
+
+    code = "FILE_TOO_LARGE"
+
+
 class InvalidPatternError(PDFModifierError):
     """Regex pattern is invalid."""
 

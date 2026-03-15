@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .analyzer import PDFAnalyzer
 from .exceptions import (
+    FileSizeExceededError,
     InvalidPatternError,
     PDFModifierError,
     PDFNotFoundError,
@@ -35,6 +36,7 @@ __all__ = [
     "ReplacementSpec",
     "TextElement",
     # Exceptions
+    "FileSizeExceededError",
     "InvalidPatternError",
     "PDFModifierError",
     "PDFNotFoundError",

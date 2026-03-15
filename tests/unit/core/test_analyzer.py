@@ -8,7 +8,7 @@ import fitz
 import pytest
 
 from pdf_modifier_mcp.core import PDFAnalyzer
-from pdf_modifier_mcp.core.exceptions import PDFPasswordError, PDFReadError
+from pdf_modifier_mcp.core.exceptions import PDFNotFoundError, PDFPasswordError
 from pdf_modifier_mcp.core.models import FontInspectionResult, HyperlinkInventory, PDFStructure
 
 from ...conftest import SAMPLE_PDF, create_encrypted_pdf
@@ -64,7 +64,7 @@ class TestGetStructure:
 
     def test_raises_on_invalid_file(self, tmp_path: Path) -> None:
         analyzer = PDFAnalyzer(tmp_path / "nonexistent.pdf")
-        with pytest.raises(PDFReadError):
+        with pytest.raises(PDFNotFoundError):
             analyzer.get_structure()
 
 
@@ -79,7 +79,7 @@ class TestExtractText:
 
     def test_raises_on_invalid_file(self, tmp_path: Path) -> None:
         analyzer = PDFAnalyzer(tmp_path / "nonexistent.pdf")
-        with pytest.raises(PDFReadError):
+        with pytest.raises(PDFNotFoundError):
             analyzer.extract_text()
 
     def test_multipage_text_extraction(self, tmp_path: Path) -> None:
@@ -145,7 +145,7 @@ class TestGetHyperlinks:
 
     def test_raises_on_invalid_file(self, tmp_path: Path) -> None:
         analyzer = PDFAnalyzer(tmp_path / "missing.pdf")
-        with pytest.raises(PDFReadError):
+        with pytest.raises(PDFNotFoundError):
             analyzer.get_hyperlinks()
 
 

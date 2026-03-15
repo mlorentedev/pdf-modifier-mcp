@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from pdf_modifier_mcp.core.exceptions import (
+    FileSizeExceededError,
     InvalidPatternError,
     PDFModifierError,
     PDFNotFoundError,
@@ -35,6 +36,7 @@ class TestExceptions:
         assert PDFWriteError("x").code == "WRITE_ERROR"
         assert PDFPasswordError("x").code == "PASSWORD_ERROR"
         assert InvalidPatternError("x").code == "INVALID_PATTERN"
+        assert FileSizeExceededError("x").code == "FILE_TOO_LARGE"
 
     def test_all_inherit_from_base(self) -> None:
         exceptions = [
@@ -43,6 +45,7 @@ class TestExceptions:
             PDFWriteError,
             PDFPasswordError,
             InvalidPatternError,
+            FileSizeExceededError,
         ]
         for exc_class in exceptions:
             assert isinstance(exc_class("Test"), PDFModifierError)
