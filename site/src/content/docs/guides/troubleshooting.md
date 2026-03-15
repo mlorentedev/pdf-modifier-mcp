@@ -7,7 +7,12 @@ description: Common problems and solutions when using pdf-modifier-mcp.
 
 ### Check span boundaries
 
-PDF text that appears contiguous on screen may be split across multiple internal spans. The modifier matches text within individual spans only.
+PDF text that appears contiguous on screen may be split across multiple internal spans. The modifier uses a two-pass strategy to handle this:
+
+1. **Pass 1** — matches within individual spans (fast path)
+2. **Pass 2** — concatenates all spans in a line and matches across boundaries
+
+This handles most cross-span cases automatically. If text still isn't matching:
 
 **Diagnose:** Use `read_pdf_structure` or `pdf-mod analyze --json` to inspect span boundaries:
 
@@ -15,15 +20,7 @@ PDF text that appears contiguous on screen may be split across multiple internal
 pdf-mod analyze document.pdf --json | python -m json.tool
 ```
 
-Look for your target text in the `elements` array. If it's split across two elements, the replacement won't match.
-
-**Workaround:** Target each span fragment separately, or use regex to match the portion within a single span.
-
-### Cross-span text matching
-
-This is a known limitation of how PDF producers store text. A phrase like "Total Amount" might be stored as two separate spans: `"Total "` and `"Amount"`. Since matching operates per-span, `"Total Amount"` won't match.
-
-**Why:** PDFs are not text documents — they're page-description programs. Text position, font, and styling are stored per-span, and span boundaries are determined by the PDF producer (Word, Chrome print, LaTeX, etc.), not by word boundaries.
+Look for your target text in the `elements` array. Cross-span matching works within the same line but not across lines or blocks.
 
 ### Whitespace differences
 

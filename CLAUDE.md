@@ -4,7 +4,7 @@ Guidance for Claude/LLM agents working on the `pdf-modifier-mcp` repository.
 
 ## Project Overview
 **PDF Modifier MCP** allows text modification in PDFs while preserving layout and fonts.
-- **Stack**: Python 3.10+, PyMuPDF (fitz), Typer, FastMCP.
+- **Stack**: Python 3.12+, PyMuPDF (fitz), Typer, FastMCP.
 - **Structure**: `src/` (source), `tests/` (pytest), `.github/` (CI/CD).
 
 ## Command Palette (Makefile)
@@ -22,9 +22,10 @@ Guidance for Claude/LLM agents working on the `pdf-modifier-mcp` repository.
 ## Architecture
 
 - **Core Layer** (`src/pdf_modifier_mcp/core/`):
-  - `modifier.py`: Main logic for finding/replacing text.
-  - `analyzer.py`: PDF parsing and structure extraction.
-  - `models.py`: Pydantic schemas (contracts).
+  - `modifier.py`: Text replacement engine (two-pass: single-span + cross-span) and `batch_process()`.
+  - `analyzer.py`: PDF parsing, structure extraction, font inspection, hyperlink inventory.
+  - `models.py`: Pydantic schemas (contracts) — includes `BatchResult`.
+  - `exceptions.py`: Typed exception hierarchy (`FileSizeExceededError`, `PDFNotFoundError`, etc.).
 - **Interface Layer** (`src/pdf_modifier_mcp/interfaces/`):
   - `cli.py`: Typer-based command line.
   - `mcp.py`: FastMCP-based server.
