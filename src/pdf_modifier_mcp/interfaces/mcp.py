@@ -17,7 +17,7 @@ from fastmcp import FastMCP
 from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
-from ..core.modifier import PDFModifier
+from ..core.modifier import PDFModifier, batch_process
 from ..logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -223,6 +223,44 @@ def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
     """
     analyzer = PDFAnalyzer(input_path, password=password)
     result = analyzer.get_hyperlinks()
+    return result.model_dump_json(indent=2)
+
+
+@mcp.tool()
+@handle_mcp_errors
+def batch_modify_pdf_content(
+    input_paths: list[str],
+    output_dir: str,
+    replacements: dict[str, str],
+    use_regex: bool = False,
+    password: str | None = None,
+) -> str:
+    """
+    Apply the same text replacements to multiple PDF files at once.
+
+    Each file is processed independently -- a failure in one file does
+    not stop the rest of the batch. Output files are written to
+    ``output_dir`` using the same filename as the input.
+
+    Args:
+        input_paths: List of absolute paths to input PDF files.
+        output_dir: Directory where modified PDFs will be saved.
+        replacements: Dictionary mapping old text to new text.
+        use_regex: If true, treat keys as regex patterns.
+        password: Optional password if PDFs are encrypted.
+
+    Returns:
+        JSON string with batch results including per-file status.
+
+    Example:
+        batch_modify_pdf_content(
+            ["/path/a.pdf", "/path/b.pdf"],
+            "/path/output",
+            {"Draft": "Final", "2024": "2025"}
+        )
+    """
+    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+    result = batch_process(input_paths, output_dir, spec, password=password)
     return result.model_dump_json(indent=2)
 
 

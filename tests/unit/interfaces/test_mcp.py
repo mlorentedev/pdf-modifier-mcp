@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import fitz
 
 from pdf_modifier_mcp.interfaces.mcp import (
+    batch_modify_pdf_content,
     inspect_pdf_fonts,
     list_pdf_hyperlinks,
     mcp,
@@ -155,6 +156,61 @@ class TestMCPListHyperlinks:
         result = list_pdf_hyperlinks(str(tmp_path / "missing.pdf"))
         parsed = json.loads(result)
         assert parsed["success"] is False
+
+
+class TestMCPBatchModify:
+    """Tests for batch_modify_pdf_content tool."""
+
+    def test_batch_multiple_files(self, tmp_path: Path) -> None:
+        pdf1 = create_pdf(tmp_path / "a.pdf", text="Hello World")
+        pdf2 = create_pdf(tmp_path / "b.pdf", text="Hello World")
+        output_dir = tmp_path / "out"
+
+        result = batch_modify_pdf_content(
+            [str(pdf1), str(pdf2)],
+            str(output_dir),
+            {"Hello": "Goodbye"},
+        )
+        parsed = json.loads(result)
+        assert parsed["total_files"] == 2
+        assert parsed["successful"] == 2
+        assert parsed["failed"] == 0
+
+    def test_batch_with_missing_file(self, tmp_path: Path) -> None:
+        pdf_good = create_pdf(tmp_path / "good.pdf", text="Hello")
+        output_dir = tmp_path / "out"
+
+        result = batch_modify_pdf_content(
+            [str(pdf_good), str(tmp_path / "missing.pdf")],
+            str(output_dir),
+            {"Hello": "Goodbye"},
+        )
+        parsed = json.loads(result)
+        assert parsed["total_files"] == 2
+        assert parsed["successful"] == 1
+        assert parsed["failed"] == 1
+        assert len(parsed["errors"]) == 1
+
+    def test_batch_empty_list(self, tmp_path: Path) -> None:
+        output_dir = tmp_path / "out"
+        result = batch_modify_pdf_content([], str(output_dir), {"a": "b"})
+        parsed = json.loads(result)
+        assert parsed["total_files"] == 0
+        assert parsed["successful"] == 0
+        assert parsed["failed"] == 0
+
+    def test_batch_regex(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "test.pdf", text="Date: 2024-01-01")
+        output_dir = tmp_path / "out"
+
+        result = batch_modify_pdf_content(
+            [str(pdf)],
+            str(output_dir),
+            {r"\d{4}-\d{2}-\d{2}": "REDACTED"},
+            use_regex=True,
+        )
+        parsed = json.loads(result)
+        assert parsed["successful"] == 1
 
 
 class TestMCPErrorHandling:

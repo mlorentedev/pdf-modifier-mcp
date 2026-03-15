@@ -116,3 +116,13 @@ class ModificationResult(BaseModel):
     replacements_made: int
     pages_modified: int
     warnings: list[str] = Field(default_factory=list)
+
+
+class BatchResult(BaseModel):
+    """Result of batch PDF modification."""
+
+    total_files: int
+    successful: int
+    failed: int
+    results: list[ModificationResult]
+    errors: list[dict[str, str]] = Field(default_factory=list)
