@@ -25,13 +25,16 @@ Both interfaces share the same core. Adding a new interface (e.g., HTTP API) req
 
 ### PDFModifier
 
-The main modification engine. Implements a batch-redact strategy:
+The main modification engine. Uses a two-pass matching strategy with batch redaction:
 
-1. **Scan** — iterate all spans on a page, collect matches against the replacement spec
-2. **Redact** — add redaction annotations for all matches, then call `apply_redactions()` once per page
-3. **Insert** — place replacement text at original coordinates with matched font properties
+1. **Pass 1** — match within individual spans (fast path for most cases)
+2. **Pass 2** — concatenate spans per line and match across boundaries, mapping results back to individual spans
+3. **Redact** — add redaction annotations for all matches, then call `apply_redactions()` once per page
+4. **Insert** — place replacement text at original coordinates with matched font properties
 
-This approach is more efficient than per-match processing because `apply_redactions()` is expensive and benefits from batching.
+Batch redaction is more efficient because `apply_redactions()` is expensive and benefits from batching.
+
+A module-level `batch_process()` function applies the same replacements across multiple files with per-file error isolation.
 
 **Font mapping:** Embedded PDF font names are mapped to Base 14 equivalents using substring matching:
 
@@ -63,6 +66,7 @@ Input and output contracts are defined as Pydantic v2 models:
 
 - **`ReplacementSpec`** — validates input, compiles regex patterns via `model_validator`
 - **`ModificationResult`** — success status, counts, warnings
+- **`BatchResult`** — aggregate results for multi-file processing
 - **`PDFStructure` / `PageStructure` / `TextElement`** — document structure hierarchy
 - **`FontInspectionResult` / `FontMatch`** — font inspection output
 - **`HyperlinkInventory` / `Hyperlink`** — link extraction output
@@ -76,11 +80,12 @@ All exceptions inherit from `PDFModifierError`, which includes:
 
 ```
 PDFModifierError
-├── PDFNotFoundError    (FILE_NOT_FOUND)
-├── PDFReadError        (READ_ERROR)
-├── PDFWriteError       (WRITE_ERROR)
-├── PDFPasswordError    (PASSWORD_ERROR)
-└── InvalidPatternError (INVALID_PATTERN)
+├── PDFNotFoundError       (FILE_NOT_FOUND)
+├── FileSizeExceededError  (FILE_TOO_LARGE)
+├── PDFReadError           (READ_ERROR)
+├── PDFWriteError          (WRITE_ERROR)
+├── PDFPasswordError       (PASSWORD_ERROR)
+└── InvalidPatternError    (INVALID_PATTERN)
 ```
 
 ## Interface layer
@@ -102,6 +107,7 @@ Uses Typer with Rich console output. Commands map 1:1 to core methods:
 | Command | Core method |
 |---------|-------------|
 | `modify` | `PDFModifier.process()` |
+| `batch` | `batch_process()` |
 | `analyze` | `PDFAnalyzer.get_structure()` / `extract_text()` |
 | `inspect` | `PDFAnalyzer.inspect_fonts()` |
 | `links` | `PDFAnalyzer.get_hyperlinks()` |
@@ -118,4 +124,4 @@ Structured JSON logging to `~/.pdf-modifier/logs/pdf-modifier.log` with 5MB rota
 
 **Why no async?** PDF operations are CPU-bound (parsing, rendering). Async would add complexity without performance benefit. The MCP server uses synchronous tool handlers, which FastMCP runs in threads for concurrency.
 
-**Why no file size validation?** The project is zero-config by design. PyMuPDF handles large files efficiently with memory-mapped I/O. Adding size limits would require configuration, breaking the zero-config principle.
+**Why file size validation?** Large PDFs can cause OOM during processing. Both `PDFModifier` and `PDFAnalyzer` validate file size before opening (default 100 MB, configurable via `max_file_size` parameter). The limit is generous enough for typical use while protecting against accidental processing of multi-GB files.

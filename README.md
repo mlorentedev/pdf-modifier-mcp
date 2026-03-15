@@ -67,7 +67,7 @@ That's it. You're running.
 
 ## What You Get
 
-### 3 MCP Tools — PDF manipulation, on demand
+### 5 MCP Tools — PDF manipulation, on demand
 
 | Tool | What it does |
 |---|---|
@@ -75,6 +75,7 @@ That's it. You're running.
 | `inspect_pdf_fonts` | Search for terms and report their exact font properties |
 | `list_pdf_hyperlinks` | Inventory all existing hyperlinks and URIs in the document |
 | `modify_pdf_content` | Find and replace text (or regex) with strict style and layout preservation |
+| `batch_modify_pdf_content` | Apply the same replacements to multiple PDFs at once |
 
 ### CLI Interface (For Humans)
 
@@ -86,6 +87,9 @@ pdf-mod modify input.pdf output.pdf -r "old text=new text"
 
 # Inventory hyperlinks
 pdf-mod links input.pdf
+
+# Batch process multiple PDFs
+pdf-mod batch *.pdf -o output/ -r "Draft=Final"
 ```
 # Regex replacement (dates, IDs, etc.)
 pdf-mod modify input.pdf output.pdf -r "Order #\d+=Order #REDACTED" --regex

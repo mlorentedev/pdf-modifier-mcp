@@ -139,7 +139,7 @@ Find and replace text in a PDF while preserving font styles.
 
 ### Important behaviors
 
-- Text is matched within individual text spans (see [Known Limitations](/pdf-modifier-mcp/guides/troubleshooting/#cross-span-text-matching))
+- Text is matched within individual spans first, then a second pass matches across span boundaries within the same line
 - Font style is approximated using Base 14 fonts (Helvetica, Times, Courier)
 - Replacement text should be similar length to avoid visual overlap
 - Maximum 100 replacements per call
@@ -177,6 +177,49 @@ Extract all existing hyperlinks and clickable URIs from a PDF.
 
 ---
 
+## batch_modify_pdf_content
+
+Apply the same text replacements to multiple PDF files at once. Each file is processed independently — a failure in one file does not stop the rest.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `input_paths` | `string[]` | Yes | List of absolute paths to input PDF files |
+| `output_dir` | `string` | Yes | Directory where modified PDFs will be saved |
+| `replacements` | `object` | Yes | Dictionary mapping old text to new text |
+| `use_regex` | `boolean` | No | Treat keys as regex patterns (default: `false`) |
+| `password` | `string` | No | Password if PDFs are encrypted |
+
+### Response
+
+```json
+{
+  "total_files": 3,
+  "successful": 2,
+  "failed": 1,
+  "results": [
+    {
+      "success": true,
+      "input_path": "/path/to/a.pdf",
+      "output_path": "/path/to/output/a.pdf",
+      "replacements_made": 5,
+      "pages_modified": 2,
+      "warnings": []
+    }
+  ],
+  "errors": [
+    {"file": "/path/to/missing.pdf", "error": "PDF file not found: ..."}
+  ]
+}
+```
+
+### Usage tip
+
+Use this for bulk operations like redacting dates across a folder of invoices. Output files are written to `output_dir` using the same filename as the input.
+
+---
+
 ## Error codes
 
 All tools return structured JSON errors with typed codes:
@@ -184,6 +227,7 @@ All tools return structured JSON errors with typed codes:
 | Code | Description |
 |------|-------------|
 | `FILE_NOT_FOUND` | PDF file does not exist or is not accessible |
+| `FILE_TOO_LARGE` | PDF exceeds the maximum allowed size (default 100 MB) |
 | `READ_ERROR` | Failed to read or parse PDF (may be corrupted) |
 | `WRITE_ERROR` | Failed to write output PDF |
 | `PASSWORD_ERROR` | PDF requires a password but none (or incorrect) was provided |

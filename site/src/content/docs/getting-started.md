@@ -29,7 +29,7 @@ make setup
 
 ## CLI Usage
 
-The `pdf-mod` command exposes four operations.
+The `pdf-mod` command exposes six operations.
 
 ### Replace text
 
@@ -106,6 +106,20 @@ pdf-mod links input.pdf
 
 Output includes page number, target URI, and the text area covered by the link.
 
+### Batch processing
+
+Apply the same replacements to multiple files at once:
+
+```bash
+pdf-mod batch file1.pdf file2.pdf -o output/ -r "Draft=Final"
+```
+
+Each file is processed independently — failures in one file don't stop the batch. Output files are saved to `--output-dir` with the same filename.
+
+```bash
+pdf-mod batch *.pdf -o redacted/ -r "\d{4}-\d{4}-\d{4}-\d{4}=XXXX-XXXX-XXXX-XXXX" --regex
+```
+
 ## MCP Server
 
 The MCP server exposes the same functionality over stdio for AI agent integration. **Use user scope (`-s user`) so the tools are available across all your projects.**
@@ -161,6 +175,7 @@ Any MCP-compatible client (like Cursor or Windsurf) that supports stdio transpor
 | `inspect_pdf_fonts` | `input_path`, `terms[]`, `password?` | Searches for text terms (substring match) and returns font name, size, and position for each match. Run this before replacements to verify font handling. |
 | `list_pdf_hyperlinks` | `input_path`, `password?` | Extracts all existing hyperlinks and URIs from the document, including their location and covered text. |
 | `modify_pdf_content` | `input_path`, `output_path`, `replacements{}`, `use_regex?`, `password?` | Find and replace text with style preservation. Supports regex patterns and hyperlink syntax (`text\|URL`). Returns replacements made, pages modified, and any warnings. |
+| `batch_modify_pdf_content` | `input_paths[]`, `output_dir`, `replacements{}`, `use_regex?`, `password?` | Apply the same replacements to multiple PDFs at once. Per-file error isolation. |
 
 All tools return structured JSON. Errors include a typed error code (`FILE_NOT_FOUND`, `READ_ERROR`, `WRITE_ERROR`), a human-readable message, and a details object.
 
@@ -177,7 +192,7 @@ All tools return structured JSON. Errors include a typed error code (`FILE_NOT_F
 3. Replacement text is inserted at the original coordinates with matched font properties.
 4. Embedded font names are mapped to Base 14 equivalents: `"Arial-BoldMT"` becomes Helvetica-Bold (`HeBo`), `"TimesNewRomanPSMT"` becomes Times-Roman (`TiRo`), etc.
 
-**Known limitation:** text matching operates within individual PDF spans. If a target phrase is split across two spans by the PDF producer, it will not match. Use `read_pdf_structure` to inspect span boundaries when this happens.
+Text matching uses a two-pass strategy: first within individual spans, then across span boundaries within the same line. This handles most cases where PDF producers split text across multiple spans.
 
 ## Architecture
 
@@ -190,6 +205,7 @@ Entry Points               Core Layer                  Engine
                             +-----------------------+
 ```
 
-- **PDFModifier** — context manager that opens, modifies, and saves the PDF. Batch-redact strategy for efficiency.
+- **PDFModifier** — context manager that opens, modifies, and saves the PDF. Two-pass matching (single-span + cross-span) with batch-redact strategy.
 - **PDFAnalyzer** — reads structure via `page.get_text("dict")`, traverses the block/line/span hierarchy.
-- **Pydantic models** — `ReplacementSpec` validates input (regex compilation, max 100 replacements). `ModificationResult`, `PDFStructure`, and `FontInspectionResult` are the typed outputs.
+- **batch_process()** — processes multiple PDFs independently with per-file error isolation.
+- **Pydantic models** — `ReplacementSpec` validates input (regex compilation, max 100 replacements). `ModificationResult`, `BatchResult`, `PDFStructure`, and `FontInspectionResult` are the typed outputs.
