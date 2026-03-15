@@ -9,6 +9,7 @@ permissions:
   contents: write
   pull-requests: write
   id-token: write
+  statuses: write
 
 jobs:
   release-please:
@@ -21,6 +22,63 @@ jobs:
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Run CI on the release-please PR branch and report status checks.
+  # Needed because GITHUB_TOKEN events don't trigger other workflows,
+  # so the CI workflow never runs on the release-please branch.
+  release-pr-ci:
+    needs: release-please
+    if: needs.release-please.outputs.release_created != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - name: Check if release branch exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          SHA=$(gh api "repos/${REPO}/git/ref/heads/release-please--branches--master" --jq '.object.sha' 2>/dev/null || echo "")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "exists=$( [ -n "$SHA" ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.exists == 'true'
+        with:
+          ref: release-please--branches--master
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        if: steps.check.outputs.exists == 'true'
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        if: steps.check.outputs.exists == 'true'
+        run: |
+          uv python install ${{ matrix.python-version }}
+          uv venv
+          uv pip install -e ".[dev]"
+          make check
+
+      - name: Report status on release PR
+        if: always() && steps.check.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.check.outputs.sha }}
+          PY_VERSION: ${{ matrix.python-version }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          STATE="failure"
+          if [ "$JOB_STATUS" = "success" ]; then STATE="success"; fi
+          gh api "repos/${REPO}/statuses/${SHA}" \
+            -f state="$STATE" \
+            -f context="test (${PY_VERSION})" \
+            -f description="Release PR CI"
 
   publish:
     needs: release-please
