@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.3.0...v1.4.0) (2026-03-15)
+
+
+### Features
+
+* add file size validation to prevent OOM with large PDFs ([#54](https://github.com/mlorentedev/pdf-modifier-mcp/issues/54)) ([d289274](https://github.com/mlorentedev/pdf-modifier-mcp/commit/d28927409e5a1e6a34d7ae4e33aae1493b8c53de))
+* **core:** implement multi-span regex matching ([#57](https://github.com/mlorentedev/pdf-modifier-mcp/issues/57)) ([ad56a05](https://github.com/mlorentedev/pdf-modifier-mcp/commit/ad56a05ccbd02ef68edd9beebf9dc752b1e77512)), closes [#4](https://github.com/mlorentedev/pdf-modifier-mcp/issues/4)
+* **mcp:** add batch processing support ([#56](https://github.com/mlorentedev/pdf-modifier-mcp/issues/56)) ([fb24f32](https://github.com/mlorentedev/pdf-modifier-mcp/commit/fb24f32f65405d0bb3c3bc3edae9191803e3ca3e)), closes [#11](https://github.com/mlorentedev/pdf-modifier-mcp/issues/11)
+
+
+### Bug Fixes
+
+* **ci:** auto-trigger CI on release-please PR branch ([#58](https://github.com/mlorentedev/pdf-modifier-mcp/issues/58)) ([ef7e73a](https://github.com/mlorentedev/pdf-modifier-mcp/commit/ef7e73a87f099e0697ea178b4c4165fbd602f519))
+
 ## [1.3.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.2.0...v1.3.0) (2026-03-14)
 
 
