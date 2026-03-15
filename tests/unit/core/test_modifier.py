@@ -196,11 +196,11 @@ class TestModifierEncryptedPDF:
 
 
 class TestCrossSpanMatching:
-    """Tests documenting the cross-span text matching limitation.
+    """Tests for cross-span text matching.
 
-    PyMuPDF returns text in individual spans. Text that visually appears
-    contiguous but is split across multiple spans cannot be matched as
-    a single replacement target. This is a known limitation.
+    PyMuPDF returns text in individual spans. When text is split across
+    multiple spans within the same line, the cross-span matching pass
+    concatenates span texts and matches against the merged string.
     """
 
     def test_single_span_matches(self, tmp_path: Path) -> None:
@@ -212,12 +212,12 @@ class TestCrossSpanMatching:
         result = modifier.process(spec)
         assert result.replacements_made == 1
 
-    def test_cross_span_text_not_matched(self, tmp_path: Path) -> None:
-        """Text split across spans is NOT matched — known limitation."""
+    def test_cross_span_literal_match(self, tmp_path: Path) -> None:
+        """Literal text split across spans is matched via cross-span pass."""
         pdf_path = tmp_path / "multi_span.pdf"
         doc = fitz.open()
         page = doc.new_page()
-        # Insert two spans with different fonts to prevent PyMuPDF merging
+        # Different fonts force separate spans in PyMuPDF output
         page.insert_text((100, 100), "Hello ", fontsize=12, fontname="helv")
         page.insert_text((140, 100), "World", fontsize=12, fontname="cour")
         doc.save(str(pdf_path))
@@ -227,8 +227,69 @@ class TestCrossSpanMatching:
         modifier = PDFModifier(pdf_path, output)
         spec = ReplacementSpec(replacements={"Hello World": "Goodbye World"})
         result = modifier.process(spec)
-        # This documents the limitation: cross-span text won't match
-        assert result.replacements_made == 0
+        assert result.replacements_made >= 1
+
+    def test_cross_span_regex_match(self, tmp_path: Path) -> None:
+        """Regex matching works across span boundaries."""
+        pdf_path = tmp_path / "multi_span_regex.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((100, 100), "Hello ", fontsize=12, fontname="helv")
+        page.insert_text((140, 100), "World", fontsize=12, fontname="cour")
+        doc.save(str(pdf_path))
+        doc.close()
+
+        output = tmp_path / "out.pdf"
+        modifier = PDFModifier(pdf_path, output)
+        spec = ReplacementSpec(
+            replacements={r"Hello\s+World": "Goodbye World"},
+            use_regex=True,
+        )
+        result = modifier.process(spec)
+        assert result.replacements_made >= 1
+
+    def test_cross_span_preserves_first_span_style(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Replacement uses font properties from the first span."""
+        pdf_path = tmp_path / "style_check.pdf"
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((100, 100), "Hello ", fontsize=12, fontname="helv")
+        page.insert_text((140, 100), "World", fontsize=12, fontname="cour")
+        doc.save(str(pdf_path))
+        doc.close()
+
+        output = tmp_path / "out.pdf"
+        modifier = PDFModifier(pdf_path, output)
+        modifier._doc = modifier._open_doc()
+        page = modifier._doc[0]
+        spec = ReplacementSpec(replacements={"Hello World": "Goodbye"})
+        items = modifier._collect_replacements(page, spec)
+        modifier.close()
+
+        cross_items = [it for it in items if "bboxes" in it]
+        assert len(cross_items) >= 1
+        item = cross_items[0]
+        assert len(item["bboxes"]) >= 2
+        # First span is Helvetica
+        assert item["font_code"] == "helv"
+
+    def test_no_duplicate_matches(self, tmp_path: Path) -> None:
+        """Single-span matches are not duplicated by cross-span pass."""
+        pdf_path = create_pdf(
+            tmp_path / "single.pdf",
+            text="Hello World",
+        )
+        output = tmp_path / "out.pdf"
+        modifier = PDFModifier(pdf_path, output)
+        spec = ReplacementSpec(
+            replacements={"Hello World": "Goodbye World"},
+        )
+        result = modifier.process(spec)
+        # Single span: matched exactly once, not duplicated
+        assert result.replacements_made == 1
 
 
 class TestNoMatchReplacements:

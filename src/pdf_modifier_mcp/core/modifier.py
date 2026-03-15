@@ -144,7 +144,11 @@ class PDFModifier:
 
                 # Batch: add all redaction annotations first
                 for item in items:
-                    page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
+                    if "bboxes" in item:
+                        for bbox in item["bboxes"]:
+                            page.add_redact_annot(bbox, fill=(1, 1, 1))
+                    else:
+                        page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
 
                 # Single apply_redactions() call per page (efficient)
                 page.apply_redactions()
@@ -220,10 +224,18 @@ class PDFModifier:
         page: fitz.Page,
         spec: ReplacementSpec,
     ) -> list[dict[str, Any]]:
-        """Scan page and collect items to replace."""
+        """Scan page and collect items to replace.
+
+        Two-pass approach:
+        1. Single-span matching (fast path for most cases).
+        2. Cross-span matching per line: concatenate span texts and match
+           across boundaries, mapping results back to individual spans.
+        """
         items: list[dict[str, Any]] = []
+        matched_span_ids: set[int] = set()
         blocks = page.get_text("dict")["blocks"]
 
+        # --- Pass 1: single-span matching ---
         for block in blocks:
             if "lines" not in block:
                 continue
@@ -242,45 +254,188 @@ class PDFModifier:
                             match_found = True
 
                         if match_found:
-                            # Parse replacement for URL
-                            replacement_text = replacement_raw
-                            url = None
-
-                            if "|" in replacement_raw:
-                                candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
-                                candidate_url = candidate_url.strip()
-
-                                if candidate_url == "void(0)" or candidate_url.startswith(
-                                    ("http://", "https://", "mailto:", "javascript:")
-                                ):
-                                    replacement_text = candidate_text
-                                    url = (
-                                        "javascript:void(0)"
-                                        if candidate_url == "void(0)"
-                                        else candidate_url
-                                    )
-
-                            font_code, font_std = self._get_font_properties(span["font"])
-
-                            if spec.use_regex and spec.compiled_patterns:
-                                pattern = spec.compiled_patterns[target]
-                                new_text = pattern.sub(replacement_text, original)
-                            else:
-                                new_text = original.replace(target, replacement_text)
-
-                            items.append(
-                                {
-                                    "bbox": span["bbox"],
-                                    "origin": span["origin"],
-                                    "text": new_text,
-                                    "url": url,
-                                    "font_code": font_code,
-                                    "font_std": font_std,
-                                    "size": span["size"],
-                                    "color": span["color"],
-                                }
+                            item = self._build_replacement_item(
+                                span,
+                                original,
+                                target,
+                                replacement_raw,
+                                spec,
                             )
+                            items.append(item)
+                            matched_span_ids.add(id(span))
                             break  # One replacement per span
+
+        # --- Pass 2: cross-span matching ---
+        for block in blocks:
+            if "lines" not in block:
+                continue
+            for line in block["lines"]:
+                spans = line["spans"]
+                if len(spans) < 2:
+                    continue
+
+                cross_items = self._match_across_spans(
+                    spans,
+                    spec,
+                    matched_span_ids,
+                )
+                items.extend(cross_items)
+
+        return items
+
+    def _build_replacement_item(
+        self,
+        span: dict[str, Any],
+        original: str,
+        target: str,
+        replacement_raw: str,
+        spec: ReplacementSpec,
+    ) -> dict[str, Any]:
+        """Build a single replacement item dict from a span match."""
+        replacement_text = replacement_raw
+        url = None
+
+        if "|" in replacement_raw:
+            candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
+            candidate_url = candidate_url.strip()
+
+            if candidate_url == "void(0)" or candidate_url.startswith(
+                ("http://", "https://", "mailto:", "javascript:")
+            ):
+                replacement_text = candidate_text
+                url = "javascript:void(0)" if candidate_url == "void(0)" else candidate_url
+
+        font_code, font_std = self._get_font_properties(span["font"])
+
+        if spec.use_regex and spec.compiled_patterns:
+            pattern = spec.compiled_patterns[target]
+            new_text = pattern.sub(replacement_text, original)
+        else:
+            new_text = original.replace(target, replacement_text)
+
+        return {
+            "bbox": span["bbox"],
+            "origin": span["origin"],
+            "text": new_text,
+            "url": url,
+            "font_code": font_code,
+            "font_std": font_std,
+            "size": span["size"],
+            "color": span["color"],
+        }
+
+    def _match_across_spans(
+        self,
+        spans: list[dict[str, Any]],
+        spec: ReplacementSpec,
+        matched_span_ids: set[int],
+    ) -> list[dict[str, Any]]:
+        """Match replacement targets across concatenated span texts.
+
+        For each line, concatenate all span texts, find matches in
+        the merged string, then map each match back to the spans it
+        overlaps. Only produces items for matches that span at least
+        two spans (single-span matches are handled in pass 1).
+        """
+        items: list[dict[str, Any]] = []
+
+        # Build concatenated text and offset map
+        merged = ""
+        span_ranges: list[tuple[int, int]] = []  # (start, end) in merged
+        for span in spans:
+            start = len(merged)
+            merged += span["text"]
+            span_ranges.append((start, len(merged)))
+
+        merged_stripped = merged.strip()
+        if not merged_stripped:
+            return items
+
+        for target, replacement_raw in spec.replacements.items():
+            matches: list[tuple[int, int]] = []
+            if spec.use_regex and spec.compiled_patterns:
+                pattern = spec.compiled_patterns[target]
+                for m in pattern.finditer(merged):
+                    matches.append((m.start(), m.end()))
+            else:
+                start = 0
+                while True:
+                    idx = merged.find(target, start)
+                    if idx == -1:
+                        break
+                    matches.append((idx, idx + len(target)))
+                    start = idx + 1
+
+            for m_start, m_end in matches:
+                involved: list[int] = []
+                for i, (s_start, s_end) in enumerate(span_ranges):
+                    if s_start < m_end and s_end > m_start:
+                        involved.append(i)
+
+                # Skip single-span matches (handled in pass 1)
+                if len(involved) < 2:
+                    continue
+
+                # Skip if any involved span was already matched
+                if any(id(spans[i]) in matched_span_ids for i in involved):
+                    continue
+
+                first_span = spans[involved[0]]
+                bboxes = [tuple(spans[i]["bbox"]) for i in involved]
+                # Merged bbox: min x0/y0, max x1/y1
+                x0 = min(b[0] for b in bboxes)
+                y0 = min(b[1] for b in bboxes)
+                x1 = max(b[2] for b in bboxes)
+                y1 = max(b[3] for b in bboxes)
+
+                matched_text = merged[m_start:m_end]
+
+                # Parse replacement
+                replacement_text = replacement_raw
+                url = None
+                if "|" in replacement_raw:
+                    candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
+                    candidate_url = candidate_url.strip()
+                    if candidate_url == "void(0)" or candidate_url.startswith(
+                        ("http://", "https://", "mailto:", "javascript:")
+                    ):
+                        replacement_text = candidate_text
+                        url = "javascript:void(0)" if candidate_url == "void(0)" else candidate_url
+
+                # Compute new text
+                if spec.use_regex and spec.compiled_patterns:
+                    pattern = spec.compiled_patterns[target]
+                    new_text = pattern.sub(
+                        replacement_text,
+                        matched_text,
+                    )
+                else:
+                    new_text = matched_text.replace(
+                        target,
+                        replacement_text,
+                    )
+
+                font_code, font_std = self._get_font_properties(
+                    first_span["font"],
+                )
+
+                items.append(
+                    {
+                        "bbox": (x0, y0, x1, y1),
+                        "bboxes": bboxes,
+                        "origin": first_span["origin"],
+                        "text": new_text,
+                        "url": url,
+                        "font_code": font_code,
+                        "font_std": font_std,
+                        "size": first_span["size"],
+                        "color": first_span["color"],
+                    }
+                )
+
+                # Mark all involved spans as matched
+                for i in involved:
+                    matched_span_ids.add(id(spans[i]))
 
         return items
 
