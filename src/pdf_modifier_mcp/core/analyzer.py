@@ -7,7 +7,7 @@ from pathlib import Path
 import fitz
 
 from ..logger import setup_logging
-from .exceptions import PDFPasswordError, PDFReadError
+from .exceptions import FileSizeExceededError, PDFNotFoundError, PDFPasswordError, PDFReadError
 from .models import (
     FontInspectionResult,
     FontMatch,
@@ -19,6 +19,8 @@ from .models import (
 )
 
 logger = setup_logging(__name__)
+
+DEFAULT_MAX_FILE_SIZE_BYTES: int = 100 * 1024 * 1024  # 100 MB
 
 
 class PDFAnalyzer:
@@ -39,12 +41,37 @@ class PDFAnalyzer:
         >>> print(result.total_matches)
     """
 
-    def __init__(self, file_path: str | Path, password: str | None = None) -> None:
+    def __init__(
+        self,
+        file_path: str | Path,
+        password: str | None = None,
+        max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+    ) -> None:
         self.file_path = Path(file_path)
         self.password = password
+        self.max_file_size = max_file_size
 
     def _open_doc(self) -> fitz.Document:
         """Safely open the document with password authentication if required."""
+        if not self.file_path.exists():
+            raise PDFNotFoundError(
+                f"PDF file not found: {self.file_path}",
+                {"path": str(self.file_path)},
+            )
+
+        file_size = self.file_path.stat().st_size
+        if file_size > self.max_file_size:
+            size_mb = file_size / (1024 * 1024)
+            limit_mb = self.max_file_size / (1024 * 1024)
+            raise FileSizeExceededError(
+                f"PDF file is {size_mb:.1f} MB, exceeds limit of {limit_mb:.0f} MB",
+                {
+                    "path": str(self.file_path),
+                    "size_bytes": file_size,
+                    "limit_bytes": self.max_file_size,
+                },
+            )
+
         try:
             doc = fitz.open(self.file_path)
             if doc.needs_pass:
@@ -110,7 +137,7 @@ class PDFAnalyzer:
                     pages=pages,
                 )
 
-        except PDFPasswordError:
+        except (PDFPasswordError, PDFNotFoundError, FileSizeExceededError):
             raise
         except Exception as e:
             raise PDFReadError(f"Failed to analyze PDF: {e}", {"path": str(self.file_path)}) from e
@@ -134,7 +161,7 @@ class PDFAnalyzer:
                     output.append(page.get_text("text"))
                     output.append("-" * 20)
                 return "\n".join(output)
-        except PDFPasswordError:
+        except (PDFPasswordError, PDFNotFoundError, FileSizeExceededError):
             raise
         except Exception as e:
             raise PDFReadError(f"Failed to extract text: {e}", {"path": str(self.file_path)}) from e
@@ -188,7 +215,7 @@ class PDFAnalyzer:
                 total_matches=len(matches),
             )
 
-        except PDFPasswordError:
+        except (PDFPasswordError, PDFNotFoundError, FileSizeExceededError):
             raise
         except Exception as e:
             raise PDFReadError(
@@ -230,7 +257,7 @@ class PDFAnalyzer:
                 links=links,
             )
 
-        except PDFPasswordError:
+        except (PDFPasswordError, PDFNotFoundError, FileSizeExceededError):
             raise
         except Exception as e:
             raise PDFReadError(

@@ -8,7 +8,7 @@ import fitz
 import pytest
 
 from pdf_modifier_mcp.core import PDFModifier
-from pdf_modifier_mcp.core.exceptions import PDFPasswordError, PDFReadError
+from pdf_modifier_mcp.core.exceptions import PDFNotFoundError, PDFPasswordError
 from pdf_modifier_mcp.core.models import ReplacementSpec
 
 from ...conftest import create_encrypted_pdf, create_pdf
@@ -122,7 +122,7 @@ class TestModifierInit:
     def test_nonexistent_file_raises_on_process(self, tmp_path: Path) -> None:
         modifier = PDFModifier(tmp_path / "missing.pdf", tmp_path / "out.pdf")
         spec = ReplacementSpec(replacements={"a": "b"})
-        with pytest.raises(PDFReadError):
+        with pytest.raises(PDFNotFoundError):
             modifier.process(spec)
 
 
