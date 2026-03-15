@@ -9,7 +9,7 @@ from typer.testing import CliRunner
 
 from pdf_modifier_mcp.interfaces.cli import app
 
-from ...conftest import SAMPLE_PDF
+from ...conftest import SAMPLE_PDF, create_pdf
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -138,6 +138,66 @@ class TestCLILinks:
         assert "https://example.com" in result.stdout
 
 
+class TestCLIBatch:
+    """Tests for CLI batch command."""
+
+    def test_batch_multiple_files(self, tmp_path: Path) -> None:
+        pdf1 = create_pdf(tmp_path / "a.pdf", text="Hello World")
+        pdf2 = create_pdf(tmp_path / "b.pdf", text="Hello World")
+        output_dir = tmp_path / "out"
+
+        result = runner.invoke(
+            app,
+            [
+                "batch",
+                str(pdf1),
+                str(pdf2),
+                "-o",
+                str(output_dir),
+                "-r",
+                "Hello=Goodbye",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "2 succeeded" in result.stdout
+        assert (output_dir / "a.pdf").exists()
+        assert (output_dir / "b.pdf").exists()
+
+    def test_batch_with_failed_file(self, tmp_path: Path) -> None:
+        pdf_good = create_pdf(tmp_path / "good.pdf", text="Hello")
+        output_dir = tmp_path / "out"
+
+        result = runner.invoke(
+            app,
+            [
+                "batch",
+                str(pdf_good),
+                str(tmp_path / "missing.pdf"),
+                "-o",
+                str(output_dir),
+                "-r",
+                "Hello=Goodbye",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "1 succeeded" in result.stdout
+        assert "1 failed" in result.stdout
+
+    def test_batch_invalid_format_error(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "test.pdf", text="Hello")
+        output_dir = tmp_path / "out"
+
+        result = runner.invoke(
+            app,
+            ["batch", str(pdf), "-o", str(output_dir), "-r", "no_equals"],
+        )
+        assert result.exit_code == 1
+
+    def test_batch_shows_in_help(self) -> None:
+        result = runner.invoke(app, ["--help"])
+        assert "batch" in result.stdout
+
+
 class TestCLIHelp:
     """Tests for CLI help."""
 
@@ -145,6 +205,7 @@ class TestCLIHelp:
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
         assert "modify" in result.stdout
+        assert "batch" in result.stdout
         assert "analyze" in result.stdout
         assert "inspect" in result.stdout
         assert "links" in result.stdout

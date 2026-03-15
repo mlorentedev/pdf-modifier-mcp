@@ -16,7 +16,7 @@ from rich.table import Table
 from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
-from ..core.modifier import PDFModifier
+from ..core.modifier import PDFModifier, batch_process
 from ..logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -95,6 +95,94 @@ def modify(
         raise typer.Exit(code=1) from None
     except Exception:
         logger.exception("Unexpected error in CLI modify")
+        console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
+        raise typer.Exit(code=1) from None
+
+
+@app.command()
+def batch(
+    input_pdfs: Annotated[
+        list[Path],
+        typer.Argument(help="Paths to input PDF files"),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", "-o", help="Directory for modified PDFs"),
+    ],
+    replace: Annotated[
+        list[str],
+        typer.Option(
+            "--replace",
+            "-r",
+            help="Format: 'old=new'. Use '|url' suffix for links.",
+        ),
+    ],
+    regex: Annotated[
+        bool,
+        typer.Option("--regex", help="Treat 'old' values as regex"),
+    ] = False,
+    password: Annotated[
+        str | None,
+        typer.Option("--password", "-p", help="Password if PDFs are encrypted"),
+    ] = None,
+) -> None:
+    """
+    Apply the same replacements to multiple PDF files.
+
+    Processes each file independently. Failed files do not stop the batch.
+    Output files are saved to --output-dir with the same filename.
+
+    Examples:
+        pdf-mod batch a.pdf b.pdf -o out/ -r "Draft=Final"
+        pdf-mod batch *.pdf -o out/ -r "2024=2025" -r "old=new"
+    """
+    replacements: dict[str, str] = {}
+    for item in replace:
+        if "=" not in item:
+            console.print(
+                f"[yellow]Warning:[/] Skipping invalid format" f" '{item}'. Use 'old=new'."
+            )
+            continue
+        old, new = item.split("=", 1)
+        replacements[old] = new
+
+    if not replacements:
+        console.print("[red]Error:[/] No valid replacements provided.")
+        raise typer.Exit(code=1)
+
+    try:
+        spec = ReplacementSpec(replacements=replacements, use_regex=regex)
+
+        with console.status("[bold green]Processing batch...", spinner="dots"):
+            result = batch_process(input_pdfs, output_dir, spec, password=password)
+
+        table = Table(title="Batch Results")
+        table.add_column("File", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Replacements")
+
+        for res in result.results:
+            table.add_row(
+                res.input_path,
+                "OK",
+                str(res.replacements_made),
+            )
+        for err in result.errors:
+            table.add_row(err["file"], f"[red]{err['error']}[/]", "-")
+
+        console.print(table)
+        console.print(
+            f"\n[bold]{result.successful} succeeded[/],"
+            f" [bold]{result.failed} failed[/]"
+            f" out of {result.total_files} files."
+        )
+
+    except PDFModifierError as e:
+        logger.error("Batch error: %s", e.message)
+        console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except Exception:
+        logger.exception("Unexpected error in CLI batch")
         console.print("[red]Error:[/] An unexpected error occurred. Check logs.")
         raise typer.Exit(code=1) from None
 

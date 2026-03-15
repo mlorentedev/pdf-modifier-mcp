@@ -13,6 +13,7 @@ from .exceptions import (
     PDFWriteError,
 )
 from .models import (
+    BatchResult,
     FontInspectionResult,
     FontMatch,
     ModificationResult,
@@ -21,13 +22,16 @@ from .models import (
     ReplacementSpec,
     TextElement,
 )
-from .modifier import PDFModifier
+from .modifier import PDFModifier, batch_process
 
 __all__ = [
     # Classes
     "PDFAnalyzer",
     "PDFModifier",
+    # Functions
+    "batch_process",
     # Models
+    "BatchResult",
     "FontInspectionResult",
     "FontMatch",
     "ModificationResult",

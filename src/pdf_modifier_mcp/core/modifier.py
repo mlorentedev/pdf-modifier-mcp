@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 import fitz
 
@@ -16,7 +19,7 @@ from .exceptions import (
     PDFReadError,
     PDFWriteError,
 )
-from .models import ModificationResult, ReplacementSpec
+from .models import BatchResult, ModificationResult, ReplacementSpec
 
 logger = setup_logging(__name__)
 
@@ -481,3 +484,61 @@ class PDFModifier:
                 msg = f"Could not add link for '{item['text']}': {e}"
                 logger.warning(msg)
                 self._warnings.append(msg)
+
+
+def batch_process(
+    file_paths: Sequence[str | Path],
+    output_dir: str | Path,
+    spec: ReplacementSpec,
+    password: str | None = None,
+) -> BatchResult:
+    """
+    Apply the same replacements to multiple PDF files.
+
+    Each file is processed independently; failures in one file do not
+    affect the rest of the batch. Output files are written to
+    ``output_dir`` using the same filename as the input.
+
+    Args:
+        file_paths: List of input PDF file paths.
+        output_dir: Directory where modified PDFs will be saved.
+        spec: ReplacementSpec containing replacements and options.
+        password: Optional password for encrypted PDFs.
+
+    Returns:
+        BatchResult with per-file results and aggregate statistics.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    results: list[ModificationResult] = []
+    errors: list[dict[str, str]] = []
+
+    for file_path in file_paths:
+        file_path = Path(file_path)
+        output_path = output_dir / file_path.name
+
+        if file_path.absolute() == output_path.absolute():
+            errors.append(
+                {
+                    "file": str(file_path),
+                    "error": "Input and output paths are the same",
+                }
+            )
+            continue
+
+        try:
+            modifier = PDFModifier(str(file_path), str(output_path), password=password)
+            result = modifier.process(spec)
+            results.append(result)
+        except Exception as e:
+            logger.warning("Batch: failed to process %s: %s", file_path, e)
+            errors.append({"file": str(file_path), "error": str(e)})
+
+    return BatchResult(
+        total_files=len(file_paths),
+        successful=len(results),
+        failed=len(errors),
+        results=results,
+        errors=errors,
+    )
