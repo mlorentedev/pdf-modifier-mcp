@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.2](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.1...v1.4.2) (2026-05-29)
+
+
+### Documentation
+
+* migrate project-bound knowledge into docs/ (KPM-017) ([#63](https://github.com/mlorentedev/pdf-modifier-mcp/issues/63)) ([61a08a7](https://github.com/mlorentedev/pdf-modifier-mcp/commit/61a08a7ad0b05dda908187d3e864070023724b36))
+
 ## [1.4.1](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.0...v1.4.1) (2026-03-15)
 
 
