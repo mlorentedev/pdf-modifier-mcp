@@ -150,3 +150,7 @@ make check     # lint + typecheck + test
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Documentation
+
+Project-bound knowledge lives in [`docs/`](docs/) (docs-as-code): ADRs, runbooks, troubleshooting, and lessons.
