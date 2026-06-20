@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.3](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.2...v1.4.3) (2026-06-20)
+
+
+### Bug Fixes
+
+* **security:** harden .gitignore + add pre-implementation audit ([#82](https://github.com/mlorentedev/pdf-modifier-mcp/issues/82)) ([f53288c](https://github.com/mlorentedev/pdf-modifier-mcp/commit/f53288c8d57b31324c2d5e5fdfcdceee0d1bd656))
+
+
+### Documentation
+
+* architecture session — 12 ADRs, 6 specs, AGENTS.md migration ([#79](https://github.com/mlorentedev/pdf-modifier-mcp/issues/79)) ([2dd5e26](https://github.com/mlorentedev/pdf-modifier-mcp/commit/2dd5e264b6aace81b1582d9bc45a7f1a01a3191c))
+
 ## [1.4.2](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.1...v1.4.2) (2026-05-29)
 
 
