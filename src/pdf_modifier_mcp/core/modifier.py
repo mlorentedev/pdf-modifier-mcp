@@ -17,7 +17,6 @@ from .exceptions import (
     PDFNotFoundError,
     PDFPasswordError,
     PDFReadError,
-    PDFWriteError,
 )
 from .models import BatchResult, ModificationResult, ReplacementSpec
 
@@ -112,6 +111,45 @@ class PDFModifier:
             self._doc.close()
             self._doc = None
 
+    def _apply_replacements_to_page(
+        self,
+        page: fitz.Page,
+        items: list[dict[str, Any]],
+    ) -> int:
+        """Apply replacements to a single page. Returns count of replacements."""
+        for item in items:
+            if "bboxes" in item:
+                for bbox in item["bboxes"]:
+                    page.add_redact_annot(bbox, fill=(1, 1, 1))
+            else:
+                page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
+
+        page.apply_redactions()
+
+        for item in items:
+            self._insert_replacement(page, item)
+
+        return len(items)
+
+    def _process_pages(self, spec: ReplacementSpec) -> tuple[int, set[int]]:
+        """Process all pages and return (total_replacements, pages_modified)."""
+        total = 0
+        pages_modified: set[int] = set()
+
+        for page_num, page in enumerate(self._doc):  # type: ignore[arg-type]
+            items = self._collect_replacements(page, spec)
+            if not items:
+                continue
+            pages_modified.add(page_num)
+            total += self._apply_replacements_to_page(page, items)
+
+        return total, pages_modified
+
+    def _save_and_log(self) -> None:
+        """Save the modified document and log the result."""
+        self._doc.save(str(self.output_path))  # type: ignore[union-attr]
+        logger.info("Saved %s", self.output_path)
+
     def process(self, spec: ReplacementSpec) -> ModificationResult:
         """
         Execute all replacements and return structured result.
@@ -126,55 +164,19 @@ class PDFModifier:
 
         Raises:
             PDFReadError: If the PDF cannot be opened.
-            PDFWriteError: If the output cannot be saved.
         """
         doc_opened_here = False
         if not self._doc:
             self._doc = self._open_doc()
             doc_opened_here = True
 
-        total_replacements = 0
-        pages_modified: set[int] = set()
-
         try:
-            for page_num, page in enumerate(self._doc):
-                items = self._collect_replacements(page, spec)
-
-                if not items:
-                    continue
-
-                pages_modified.add(page_num)
-
-                # Batch: add all redaction annotations first
-                for item in items:
-                    if "bboxes" in item:
-                        for bbox in item["bboxes"]:
-                            page.add_redact_annot(bbox, fill=(1, 1, 1))
-                    else:
-                        page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
-
-                # Single apply_redactions() call per page (efficient)
-                page.apply_redactions()
-
-                # Insert all replacement text
-                for item in items:
-                    self._insert_replacement(page, item)
-                    total_replacements += 1
+            total, pages_modified = self._process_pages(spec)
+            self._save_and_log()
         except PDFModifierError:
             raise
         except Exception as e:
             raise PDFReadError(f"Failed to process PDF pages: {e}") from e
-
-        try:
-            self._doc.save(str(self.output_path))
-            logger.info(
-                "Saved %s with %d replacements across %d pages",
-                self.output_path,
-                total_replacements,
-                len(pages_modified),
-            )
-        except Exception as e:
-            raise PDFWriteError(f"Failed to save PDF: {e}") from e
         finally:
             if doc_opened_here:
                 self.close()
@@ -183,7 +185,7 @@ class PDFModifier:
             success=True,
             input_path=str(self.input_path),
             output_path=str(self.output_path),
-            replacements_made=total_replacements,
+            replacements_made=total,
             pages_modified=len(pages_modified),
             warnings=self._warnings,
         )
@@ -222,6 +224,67 @@ class PDFModifier:
             return tuple(c if c <= 1.0 else c / 255.0 for c in color_input[:3])  # type: ignore[return-value]
         return (0.0, 0.0, 0.0)
 
+    def _resolve_replacement(
+        self,
+        replacement_raw: str,
+        matched_text: str,
+        target: str,
+        spec: ReplacementSpec,
+    ) -> tuple[str, str | None]:
+        """Parse replacement text and URL from raw replacement string."""
+        replacement_text = replacement_raw
+        url: str | None = None
+
+        if "|" in replacement_raw:
+            candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
+            candidate_url = candidate_url.strip()
+            if candidate_url == "void(0)" or candidate_url.startswith(
+                ("http://", "https://", "mailto:", "javascript:")
+            ):
+                replacement_text = candidate_text
+                url = "javascript:void(0)" if candidate_url == "void(0)" else candidate_url
+
+        if spec.use_regex and spec.compiled_patterns:
+            pattern = spec.compiled_patterns[target]
+            new_text = pattern.sub(replacement_text, matched_text)
+        else:
+            new_text = matched_text.replace(target, replacement_text)
+
+        return new_text, url
+
+    def _match_single_span(
+        self,
+        span: dict[str, Any],
+        spec: ReplacementSpec,
+    ) -> dict[str, Any] | None:
+        """Check if a single span matches any replacement target."""
+        text = span["text"].strip()
+        original = span["text"]
+
+        for target, replacement_raw in spec.replacements.items():
+            match_found = False
+            if spec.use_regex and spec.compiled_patterns:
+                pattern = spec.compiled_patterns[target]
+                if pattern.search(text):
+                    match_found = True
+            elif target in text:
+                match_found = True
+
+            if match_found:
+                new_text, url = self._resolve_replacement(replacement_raw, original, target, spec)
+                font_code, font_std = self._get_font_properties(span["font"])
+                return {
+                    "bbox": span["bbox"],
+                    "origin": span["origin"],
+                    "text": new_text,
+                    "url": url,
+                    "font_code": font_code,
+                    "font_std": font_std,
+                    "size": span["size"],
+                    "color": span["color"],
+                }
+        return None
+
     def _collect_replacements(
         self,
         page: fitz.Page,
@@ -231,100 +294,103 @@ class PDFModifier:
 
         Two-pass approach:
         1. Single-span matching (fast path for most cases).
-        2. Cross-span matching per line: concatenate span texts and match
-           across boundaries, mapping results back to individual spans.
+        2. Cross-span matching per line.
         """
         items: list[dict[str, Any]] = []
         matched_span_ids: set[int] = set()
         blocks = page.get_text("dict")["blocks"]
 
-        # --- Pass 1: single-span matching ---
+        # Pass 1: single-span matching
         for block in blocks:
             if "lines" not in block:
                 continue
             for line in block["lines"]:
                 for span in line["spans"]:
-                    text = span["text"].strip()
-                    original = span["text"]
+                    item = self._match_single_span(span, spec)
+                    if item:
+                        items.append(item)
+                        matched_span_ids.add(id(span))
+                        break
 
-                    for target, replacement_raw in spec.replacements.items():
-                        match_found = False
-                        if spec.use_regex and spec.compiled_patterns:
-                            pattern = spec.compiled_patterns[target]
-                            if pattern.search(text):
-                                match_found = True
-                        elif target in text:
-                            match_found = True
-
-                        if match_found:
-                            item = self._build_replacement_item(
-                                span,
-                                original,
-                                target,
-                                replacement_raw,
-                                spec,
-                            )
-                            items.append(item)
-                            matched_span_ids.add(id(span))
-                            break  # One replacement per span
-
-        # --- Pass 2: cross-span matching ---
+        # Pass 2: cross-span matching
         for block in blocks:
             if "lines" not in block:
                 continue
             for line in block["lines"]:
-                spans = line["spans"]
-                if len(spans) < 2:
+                if len(line["spans"]) < 2:
                     continue
-
-                cross_items = self._match_across_spans(
-                    spans,
-                    spec,
-                    matched_span_ids,
-                )
-                items.extend(cross_items)
+                items.extend(self._match_across_spans(line["spans"], spec, matched_span_ids))
 
         return items
 
-    def _build_replacement_item(
+    def _build_merged_text(
         self,
-        span: dict[str, Any],
-        original: str,
+        spans: list[dict[str, Any]],
+    ) -> tuple[str, list[tuple[int, int]]]:
+        """Build concatenated text and offset map from spans."""
+        merged = ""
+        span_ranges: list[tuple[int, int]] = []
+        for span in spans:
+            start = len(merged)
+            merged += span["text"]
+            span_ranges.append((start, len(merged)))
+        return merged, span_ranges
+
+    def _find_matches_in_merged(
+        self,
+        merged: str,
         target: str,
-        replacement_raw: str,
         spec: ReplacementSpec,
-    ) -> dict[str, Any]:
-        """Build a single replacement item dict from a span match."""
-        replacement_text = replacement_raw
-        url = None
-
-        if "|" in replacement_raw:
-            candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
-            candidate_url = candidate_url.strip()
-
-            if candidate_url == "void(0)" or candidate_url.startswith(
-                ("http://", "https://", "mailto:", "javascript:")
-            ):
-                replacement_text = candidate_text
-                url = "javascript:void(0)" if candidate_url == "void(0)" else candidate_url
-
-        font_code, font_std = self._get_font_properties(span["font"])
-
+    ) -> list[tuple[int, int]]:
+        """Find all match positions in merged text."""
+        matches: list[tuple[int, int]] = []
         if spec.use_regex and spec.compiled_patterns:
             pattern = spec.compiled_patterns[target]
-            new_text = pattern.sub(replacement_text, original)
+            for m in pattern.finditer(merged):
+                matches.append((m.start(), m.end()))
         else:
-            new_text = original.replace(target, replacement_text)
+            start = 0
+            while True:
+                idx = merged.find(target, start)
+                if idx == -1:
+                    break
+                matches.append((idx, idx + len(target)))
+                start = idx + 1
+        return matches
+
+    def _build_cross_span_item(
+        self,
+        spans: list[dict[str, Any]],
+        involved: list[int],
+        merged: str,
+        m_start: int,
+        m_end: int,
+        replacement_raw: str,
+        target: str,
+        spec: ReplacementSpec,
+    ) -> dict[str, Any]:
+        """Build a replacement item for a cross-span match."""
+        first_span = spans[involved[0]]
+        bboxes = [tuple(spans[i]["bbox"]) for i in involved]
+        x0 = min(b[0] for b in bboxes)
+        y0 = min(b[1] for b in bboxes)
+        x1 = max(b[2] for b in bboxes)
+        y1 = max(b[3] for b in bboxes)
+
+        matched_text = merged[m_start:m_end]
+        new_text, url = self._resolve_replacement(replacement_raw, matched_text, target, spec)
+        font_code, font_std = self._get_font_properties(first_span["font"])
 
         return {
-            "bbox": span["bbox"],
-            "origin": span["origin"],
+            "bbox": (x0, y0, x1, y1),
+            "bboxes": bboxes,
+            "origin": first_span["origin"],
             "text": new_text,
             "url": url,
             "font_code": font_code,
             "font_std": font_std,
-            "size": span["size"],
-            "color": span["color"],
+            "size": first_span["size"],
+            "color": first_span["color"],
         }
 
     def _match_across_spans(
@@ -333,157 +399,73 @@ class PDFModifier:
         spec: ReplacementSpec,
         matched_span_ids: set[int],
     ) -> list[dict[str, Any]]:
-        """Match replacement targets across concatenated span texts.
-
-        For each line, concatenate all span texts, find matches in
-        the merged string, then map each match back to the spans it
-        overlaps. Only produces items for matches that span at least
-        two spans (single-span matches are handled in pass 1).
-        """
+        """Match replacement targets across concatenated span texts."""
         items: list[dict[str, Any]] = []
 
-        # Build concatenated text and offset map
-        merged = ""
-        span_ranges: list[tuple[int, int]] = []  # (start, end) in merged
-        for span in spans:
-            start = len(merged)
-            merged += span["text"]
-            span_ranges.append((start, len(merged)))
-
-        merged_stripped = merged.strip()
-        if not merged_stripped:
+        merged, span_ranges = self._build_merged_text(spans)
+        if not merged.strip():
             return items
 
         for target, replacement_raw in spec.replacements.items():
-            matches: list[tuple[int, int]] = []
-            if spec.use_regex and spec.compiled_patterns:
-                pattern = spec.compiled_patterns[target]
-                for m in pattern.finditer(merged):
-                    matches.append((m.start(), m.end()))
-            else:
-                start = 0
-                while True:
-                    idx = merged.find(target, start)
-                    if idx == -1:
-                        break
-                    matches.append((idx, idx + len(target)))
-                    start = idx + 1
+            matches = self._find_matches_in_merged(merged, target, spec)
 
             for m_start, m_end in matches:
-                involved: list[int] = []
-                for i, (s_start, s_end) in enumerate(span_ranges):
-                    if s_start < m_end and s_end > m_start:
-                        involved.append(i)
+                involved = [
+                    i for i, (s_start, s_end) in enumerate(span_ranges)
+                    if s_start < m_end and s_end > m_start
+                ]
 
-                # Skip single-span matches (handled in pass 1)
                 if len(involved) < 2:
                     continue
-
-                # Skip if any involved span was already matched
                 if any(id(spans[i]) in matched_span_ids for i in involved):
                     continue
 
-                first_span = spans[involved[0]]
-                bboxes = [tuple(spans[i]["bbox"]) for i in involved]
-                # Merged bbox: min x0/y0, max x1/y1
-                x0 = min(b[0] for b in bboxes)
-                y0 = min(b[1] for b in bboxes)
-                x1 = max(b[2] for b in bboxes)
-                y1 = max(b[3] for b in bboxes)
-
-                matched_text = merged[m_start:m_end]
-
-                # Parse replacement
-                replacement_text = replacement_raw
-                url = None
-                if "|" in replacement_raw:
-                    candidate_text, candidate_url = replacement_raw.rsplit("|", 1)
-                    candidate_url = candidate_url.strip()
-                    if candidate_url == "void(0)" or candidate_url.startswith(
-                        ("http://", "https://", "mailto:", "javascript:")
-                    ):
-                        replacement_text = candidate_text
-                        url = "javascript:void(0)" if candidate_url == "void(0)" else candidate_url
-
-                # Compute new text
-                if spec.use_regex and spec.compiled_patterns:
-                    pattern = spec.compiled_patterns[target]
-                    new_text = pattern.sub(
-                        replacement_text,
-                        matched_text,
-                    )
-                else:
-                    new_text = matched_text.replace(
-                        target,
-                        replacement_text,
-                    )
-
-                font_code, font_std = self._get_font_properties(
-                    first_span["font"],
+                item = self._build_cross_span_item(
+                    spans, involved, merged, m_start, m_end,
+                    replacement_raw, target, spec,
                 )
+                items.append(item)
 
-                items.append(
-                    {
-                        "bbox": (x0, y0, x1, y1),
-                        "bboxes": bboxes,
-                        "origin": first_span["origin"],
-                        "text": new_text,
-                        "url": url,
-                        "font_code": font_code,
-                        "font_std": font_std,
-                        "size": first_span["size"],
-                        "color": first_span["color"],
-                    }
-                )
-
-                # Mark all involved spans as matched
                 for i in involved:
                     matched_span_ids.add(id(spans[i]))
 
         return items
 
+    def _insert_link(
+        self,
+        page: fitz.Page,
+        item: dict[str, Any],
+        link_url: str,
+    ) -> None:
+        """Insert a hyperlink for the replacement text."""
+        try:
+            font = fitz.Font(item["font_std"])
+            text_width = font.text_length(item["text"], fontsize=item["size"])
+            x0 = item["origin"][0]
+            y_baseline = item["origin"][1]
+            link_rect = fitz.Rect(
+                x0, y_baseline - item["size"],
+                x0 + text_width, y_baseline + (item["size"] * 0.25),
+            )
+            page.insert_link({"kind": fitz.LINK_URI, "from": link_rect, "uri": link_url})
+        except Exception as e:
+            msg = f"Could not add link for '{item['text']}': {e}"
+            logger.warning(msg)
+            self._warnings.append(msg)
+
     def _insert_replacement(self, page: fitz.Page, item: dict[str, Any]) -> None:
         """Insert replacement text with original styling."""
         color = self._convert_color(item["color"])
-
         page.insert_text(
-            item["origin"],
-            item["text"],
-            fontname=item["font_code"],
-            fontsize=item["size"],
-            color=color,
+            item["origin"], item["text"],
+            fontname=item["font_code"], fontsize=item["size"], color=color,
         )
 
-        # Handle hyperlinks
         link_url = item["url"]
         if not link_url and item["text"].strip().startswith(("http://", "https://")):
             link_url = item["text"].strip()
-
         if link_url:
-            try:
-                font = fitz.Font(item["font_std"])
-                text_width = font.text_length(item["text"], fontsize=item["size"])
-
-                x0 = item["origin"][0]
-                y_baseline = item["origin"][1]
-                link_rect = fitz.Rect(
-                    x0,
-                    y_baseline - item["size"],
-                    x0 + text_width,
-                    y_baseline + (item["size"] * 0.25),
-                )
-
-                page.insert_link(
-                    {
-                        "kind": fitz.LINK_URI,
-                        "from": link_rect,
-                        "uri": link_url,
-                    }
-                )
-            except Exception as e:
-                msg = f"Could not add link for '{item['text']}': {e}"
-                logger.warning(msg)
-                self._warnings.append(msg)
+            self._insert_link(page, item, link_url)
 
 
 def batch_process(
@@ -519,12 +501,7 @@ def batch_process(
         output_path = output_dir / file_path.name
 
         if file_path.absolute() == output_path.absolute():
-            errors.append(
-                {
-                    "file": str(file_path),
-                    "error": "Input and output paths are the same",
-                }
-            )
+            errors.append({"file": str(file_path), "error": "Input and output paths are the same"})
             continue
 
         try:
