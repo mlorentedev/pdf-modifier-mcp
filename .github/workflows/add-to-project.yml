@@ -29,10 +29,24 @@ jobs:
           project-url: https://github.com/users/mlorentedev/projects/1
           github-token: ${{ secrets.BITACORA_PAT }}
 
-      # PRs: use gh CLI directly (the action doesn't support PRs)
+      # PRs: use github-script with GraphQL (gh project CLI fails with
+      # 'unknown owner type' under fine-grained PATs — see bitacora-status.yml).
       - name: Add PR to project
         if: github.event_name == 'pull_request'
-        run: |
-          gh project item-add 1 --owner mlorentedev --url "${{ github.event.pull_request.html_url }}"
-        env:
-          GH_TOKEN: ${{ secrets.BITACORA_PAT }}
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.BITACORA_PAT }}
+          script: |
+            const projectId = 'PVT_kwHOAM7xJs4BZ6GY';
+            const contentId = context.payload.pull_request.node_id;
+
+            const added = await github.graphql(
+              `mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                  item { id }
+                }
+              }`,
+              { projectId, contentId },
+            );
+
+            core.info(`Added PR #${context.payload.pull_request.number} to bitácora (item ${added.addProjectV2ItemById.item.id})`);
