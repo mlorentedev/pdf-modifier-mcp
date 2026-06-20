@@ -24,12 +24,29 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Storage (user uploads)
+storage/
+
+# PDFs (except test data)
+*.pdf
+!tests/data/*.pdf
+
+# Sensitive
+sensitive/
+
+# Windows artifacts
+nul
+
 # Project Specific
 tests/examples_output/
 !tests/data/sample.pdf
 *.log
 .DS_Store
-tests/examples_output/
 data/
 
 # AI
