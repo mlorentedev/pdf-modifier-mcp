@@ -37,13 +37,20 @@ class TestCLICustomFonts:
         """--custom-fonts option is available in modify command."""
         result = runner.invoke(app, ["modify", "--help"])
         assert result.exit_code == 0
-        assert "--custom-fonts" in result.stdout
+        # Strip ANSI escape codes for reliable matching in CI
+        import re
+
+        clean = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
+        assert "--custom-fonts" in clean
 
     def test_custom_font_option_exists_in_batch(self, runner: CliRunner) -> None:
         """--custom-fonts option is available in batch command."""
         result = runner.invoke(app, ["batch", "--help"])
         assert result.exit_code == 0
-        assert "--custom-fonts" in result.stdout
+        import re
+
+        clean = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
+        assert "--custom-fonts" in clean
 
     def test_custom_font_invalid_file(self, runner: CliRunner, tmp_path: Path) -> None:
         """CLI rejects non-existent custom font files."""

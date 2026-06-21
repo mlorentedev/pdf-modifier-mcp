@@ -206,9 +206,7 @@ def batch(
     replacements: dict[str, str] = {}
     for item in replace:
         if "=" not in item:
-            console.print(
-                f"[yellow]Warning:[/] Skipping invalid format" f" '{item}'. Use 'old=new'."
-            )
+            console.print(f"[yellow]Warning:[/] Skipping invalid format '{item}'. Use 'old=new'.")
             continue
         old, new = item.split("=", 1)
         replacements[old] = new

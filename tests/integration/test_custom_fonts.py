@@ -2,15 +2,31 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pathlib import Path
+import os
+from pathlib import Path
 
 import fitz
+import pytest
 
 from pdf_modifier_mcp.core.models import ReplacementSpec
 from pdf_modifier_mcp.core.modifier import PDFModifier
+
+# System font available on Windows (CI is Linux, so we skip font-embedding tests)
+_SYSTEM_FONT = None
+for _candidate in ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/times.ttf"):
+    if os.path.exists(_candidate):
+        _SYSTEM_FONT = _candidate
+        break
+
+
+def _get_system_font(tmp_path: Path) -> Path:
+    """Copy a real system font into tmp_path so PyMuPDF can embed it."""
+    if _SYSTEM_FONT is None:
+        pytest.skip("No system font available (not running on Windows)")
+    assert _SYSTEM_FONT is not None
+    dest = tmp_path / "arial.ttf"
+    dest.write_bytes(Path(_SYSTEM_FONT).read_bytes())
+    return dest
 
 
 class TestCustomFontIntegration:
@@ -29,12 +45,12 @@ class TestCustomFontIntegration:
 
         # Step 2: Replace with custom font (Arial)
         output = tmp_path / "output.pdf"
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
 
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"Helvetica": arial_path, "Times": arial_path},
+            custom_fonts={"Helvetica": str(font_file), "Times": str(font_file)},
         )
         spec = ReplacementSpec(
             replacements={
@@ -84,12 +100,12 @@ class TestCustomFontIntegration:
         doc.close()
 
         output = tmp_path / "output_link.pdf"
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
 
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"Helvetica": arial_path},
+            custom_fonts={"Helvetica": str(font_file)},
         )
         spec = ReplacementSpec(
             replacements={

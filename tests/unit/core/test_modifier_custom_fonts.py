@@ -2,16 +2,31 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pathlib import Path
+import os
+from pathlib import Path
 
 import fitz
 import pytest
 
 from pdf_modifier_mcp.core.models import ReplacementSpec
 from pdf_modifier_mcp.core.modifier import PDFModifier
+
+# System font available on Windows (CI is Linux, so we skip font-embedding tests)
+_SYSTEM_FONT = None
+for _candidate in ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/times.ttf"):
+    if os.path.exists(_candidate):
+        _SYSTEM_FONT = _candidate
+        break
+
+
+def _get_system_font(tmp_path: Path) -> Path:
+    """Copy a real system font into tmp_path so PyMuPDF can embed it."""
+    if _SYSTEM_FONT is None:
+        pytest.skip("No system font available (not running on Windows)")
+    assert _SYSTEM_FONT is not None
+    dest = tmp_path / "arial.ttf"
+    dest.write_bytes(Path(_SYSTEM_FONT).read_bytes())
+    return dest
 
 
 class TestPDFModifierCustomFonts:
@@ -59,12 +74,12 @@ class TestPDFModifierCustomFonts:
         source = self._create_test_pdf(tmp_path, "Hello World")
         output = tmp_path / "output.pdf"
 
-        # Use Arial as custom font for "Helvetica" (the font name reported by spans)
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
+
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"Helvetica": arial_path},
+            custom_fonts={"Helvetica": str(font_file)},
         )
         spec = ReplacementSpec(replacements={"Hello World": "Goodbye Moon"})
         result = modifier.process(spec)
@@ -85,11 +100,12 @@ class TestPDFModifierCustomFonts:
         source = self._create_test_pdf(tmp_path, "Replace Me")
         output = tmp_path / "output.pdf"
 
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
+
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"helv": arial_path},
+            custom_fonts={"helv": str(font_file)},
         )
         spec = ReplacementSpec(replacements={"Replace Me": "Done!"})
         result = modifier.process(spec)
@@ -108,12 +124,12 @@ class TestPDFModifierCustomFonts:
         source = self._create_test_pdf(tmp_path, "Hello World")
         output = tmp_path / "output.pdf"
 
-        # Map Helvetica to Arial
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
+
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"Helvetica": arial_path},
+            custom_fonts={"Helvetica": str(font_file)},
         )
         spec = ReplacementSpec(replacements={"Hello World": "Custom Font Test"})
         result = modifier.process(spec)
@@ -152,11 +168,12 @@ class TestPDFModifierCustomFonts:
         source = self._create_test_pdf(tmp_path, "Hello World")
         output = tmp_path / "output.pdf"
 
-        arial_path = "C:/Windows/Fonts/arial.ttf"
+        font_file = _get_system_font(tmp_path)
+
         modifier = PDFModifier(
             str(source),
             str(output),
-            custom_fonts={"Helvetica": arial_path},
+            custom_fonts={"Helvetica": str(font_file)},
         )
         spec = ReplacementSpec(replacements={"Hello World": "OTF Test"})
         result = modifier.process(spec)
