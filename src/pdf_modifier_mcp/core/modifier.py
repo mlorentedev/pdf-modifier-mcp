@@ -131,12 +131,46 @@ class PDFModifier:
 
         return len(items)
 
-    def _process_pages(self, spec: ReplacementSpec) -> tuple[int, set[int]]:
-        """Process all pages and return (total_replacements, pages_modified)."""
+    def _process_pages(
+        self,
+        spec: ReplacementSpec,
+        pages: tuple[int, int] | None = None,
+    ) -> tuple[int, set[int]]:
+        """Process pages and return (total_replacements, pages_modified).
+
+        Args:
+            spec: Replacement specification.
+            pages: Optional (start, end) 1-indexed inclusive range.
+                   None processes all pages.
+
+        Raises:
+            ValueError: If page range is invalid or out of bounds.
+        """
+        doc = self._doc
+        assert doc is not None, "Document must be opened before processing"
+        total_pages = len(doc)
+
+        if pages is not None:
+            if not pages:
+                raise ValueError("Page range must have at least one page")
+            if len(pages) != 2:
+                raise ValueError("Page range must be a (start, end) tuple")
+            start, end = pages
+            if start < 1 or end < 1:
+                raise ValueError("Page numbers must be 1-indexed")
+            if start > end:
+                raise ValueError("Page range start must not exceed end")
+            if end > total_pages:
+                raise ValueError(f"Page {end} exceeds document total of {total_pages} pages")
+            page_indices = range(start - 1, end)
+        else:
+            page_indices = range(total_pages)
+
         total = 0
         pages_modified: set[int] = set()
 
-        for page_num, page in enumerate(self._doc):  # type: ignore[arg-type]
+        for page_num in page_indices:
+            page = doc[page_num]
             items = self._collect_replacements(page, spec)
             if not items:
                 continue
@@ -150,7 +184,11 @@ class PDFModifier:
         self._doc.save(str(self.output_path))  # type: ignore[union-attr]
         logger.info("Saved %s", self.output_path)
 
-    def process(self, spec: ReplacementSpec) -> ModificationResult:
+    def process(
+        self,
+        spec: ReplacementSpec,
+        pages: tuple[int, int] | None = None,
+    ) -> ModificationResult:
         """
         Execute all replacements and return structured result.
 
@@ -158,12 +196,15 @@ class PDFModifier:
 
         Args:
             spec: ReplacementSpec containing replacements and options.
+            pages: Optional (start, end) 1-indexed inclusive page range.
+                   None processes all pages.
 
         Returns:
             ModificationResult with success status and statistics.
 
         Raises:
             PDFReadError: If the PDF cannot be opened.
+            ValueError: If page range is invalid.
         """
         doc_opened_here = False
         if not self._doc:
@@ -171,8 +212,10 @@ class PDFModifier:
             doc_opened_here = True
 
         try:
-            total, pages_modified = self._process_pages(spec)
+            total, pages_modified = self._process_pages(spec, pages)
             self._save_and_log()
+        except ValueError:
+            raise
         except PDFModifierError:
             raise
         except Exception as e:
@@ -411,7 +454,8 @@ class PDFModifier:
 
             for m_start, m_end in matches:
                 involved = [
-                    i for i, (s_start, s_end) in enumerate(span_ranges)
+                    i
+                    for i, (s_start, s_end) in enumerate(span_ranges)
                     if s_start < m_end and s_end > m_start
                 ]
 
@@ -421,8 +465,14 @@ class PDFModifier:
                     continue
 
                 item = self._build_cross_span_item(
-                    spans, involved, merged, m_start, m_end,
-                    replacement_raw, target, spec,
+                    spans,
+                    involved,
+                    merged,
+                    m_start,
+                    m_end,
+                    replacement_raw,
+                    target,
+                    spec,
                 )
                 items.append(item)
 
@@ -444,8 +494,10 @@ class PDFModifier:
             x0 = item["origin"][0]
             y_baseline = item["origin"][1]
             link_rect = fitz.Rect(
-                x0, y_baseline - item["size"],
-                x0 + text_width, y_baseline + (item["size"] * 0.25),
+                x0,
+                y_baseline - item["size"],
+                x0 + text_width,
+                y_baseline + (item["size"] * 0.25),
             )
             page.insert_link({"kind": fitz.LINK_URI, "from": link_rect, "uri": link_url})
         except Exception as e:
@@ -457,8 +509,11 @@ class PDFModifier:
         """Insert replacement text with original styling."""
         color = self._convert_color(item["color"])
         page.insert_text(
-            item["origin"], item["text"],
-            fontname=item["font_code"], fontsize=item["size"], color=color,
+            item["origin"],
+            item["text"],
+            fontname=item["font_code"],
+            fontsize=item["size"],
+            color=color,
         )
 
         link_url = item["url"]
