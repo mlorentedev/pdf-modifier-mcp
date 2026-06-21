@@ -9,6 +9,7 @@ import fitz
 from ..logger import setup_logging
 from .exceptions import FileSizeExceededError, PDFNotFoundError, PDFPasswordError, PDFReadError
 from .models import (
+    EmbeddedFontInfo,
     FontInspectionResult,
     FontMatch,
     Hyperlink,
@@ -263,3 +264,59 @@ class PDFAnalyzer:
             raise PDFReadError(
                 f"Failed to extract hyperlinks: {e}", {"path": str(self.file_path)}
             ) from e
+
+    def extract_embedded_fonts(self) -> list[EmbeddedFontInfo]:
+        """
+        Extract metadata and buffers of all embedded fonts in the PDF.
+
+        Uses ``page.get_fonts(full=True)`` to list fonts and
+        ``doc.extract_font(xref)`` to get the binary buffer.
+        Only returns fonts that are actually embedded (Type0/TrueType),
+        not Base 14 system fonts (Type1).
+
+        Returns:
+            List of EmbeddedFontInfo with name, type, subtype, buffer,
+            and page numbers.
+
+        Raises:
+            PDFReadError: If the PDF cannot be read.
+            PDFPasswordError: If password is required but not provided or incorrect.
+        """
+        results: list[EmbeddedFontInfo] = []
+
+        try:
+            with self._open_doc() as doc:
+                for page_num, page in enumerate(doc, start=1):
+                    fonts = page.get_fonts(full=True)
+                    # fonts: list of (xref, name, type, encoding, embed, file, ...)
+                    for xref, _, font_type, _, _, _, *_ in fonts:
+                        # Only extract truly embedded fonts (Type0 = custom TTF/OTF)
+                        # Type1 = Base 14 system fonts, skip them
+                        if font_type != "Type0":
+                            continue
+
+                        # Extract font buffer
+                        extract_result = doc.extract_font(xref)
+                        # extract_font returns: (name, type, subtype, buffer)
+                        if len(extract_result) >= 4:
+                            name, _, subtype, buffer = extract_result[:4]
+                            if buffer:
+                                results.append(
+                                    EmbeddedFontInfo(
+                                        name=name,
+                                        type=font_type,
+                                        subtype=subtype,
+                                        buffer=buffer,
+                                        page_numbers=[page_num],
+                                    )
+                                )
+
+        except (PDFPasswordError, PDFNotFoundError, FileSizeExceededError):
+            raise
+        except Exception as e:
+            raise PDFReadError(
+                f"Failed to extract embedded fonts: {e}",
+                {"path": str(self.file_path)},
+            ) from e
+
+        return results

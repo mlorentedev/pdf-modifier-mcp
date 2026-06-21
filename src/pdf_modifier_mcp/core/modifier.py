@@ -18,6 +18,7 @@ from .exceptions import (
     PDFPasswordError,
     PDFReadError,
 )
+from .font_resolver import FontResolver
 from .models import BatchResult, ModificationResult, ReplacementSpec
 
 logger = setup_logging(__name__)
@@ -52,17 +53,52 @@ class PDFModifier:
         output_path: str | Path,
         password: str | None = None,
         max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+        custom_fonts: dict[str, str] | None = None,
     ) -> None:
         self.input_path = Path(input_path).absolute()
         self.output_path = Path(output_path).absolute()
         self.password = password
         self.max_file_size = max_file_size
+        self._custom_fonts = self._validate_custom_fonts(custom_fonts or {})
+        self._font_resolver = FontResolver()
 
         if self.input_path == self.output_path:
             raise ValueError("Input and output paths cannot be the same. Risk of file corruption.")
 
         self._doc: fitz.Document | None = None
         self._warnings: list[str] = []
+
+    @staticmethod
+    def _parse_flags(raw_flags: int | dict[str, int] | None) -> dict[str, int] | None:
+        """Convert PyMuPDF int flags to dict, or pass through if already dict."""
+        if raw_flags is None:
+            return None
+        if isinstance(raw_flags, dict):
+            return raw_flags
+        # PyMuPDF int flags bitmask:
+        # TEXT_FONT_BOLD=1, TEXT_FONT_ITALIC=2, TEXT_FONT_SERIFED=4,
+        # TEXT_FONT_MONOSPACED=8, TEXT_FONT_SUPERSCRIPT=16
+        flags: dict[str, int] = {}
+        if raw_flags & 1:
+            flags["bold"] = 1
+        if raw_flags & 2:
+            flags["italic"] = 1
+        if raw_flags & 4:
+            flags["serif"] = 1
+        if raw_flags & 8:
+            flags["mono"] = 1
+        return flags
+
+    @staticmethod
+    def _validate_custom_fonts(custom_fonts: dict[str, str]) -> dict[str, str]:
+        """Validate that all custom font files exist and are valid TTF/OTF."""
+        for _alias, path in custom_fonts.items():
+            p = Path(path)
+            if not p.is_file():
+                raise ValueError(f"font file does not exist: {path}")
+            if p.suffix.lower() not in (".ttf", ".otf"):
+                raise ValueError(f"font file must be .ttf or .otf: {path}")
+        return custom_fonts
 
     def _open_doc(self) -> fitz.Document:
         """Safely open the document with password authentication if required."""
@@ -315,14 +351,21 @@ class PDFModifier:
 
             if match_found:
                 new_text, url = self._resolve_replacement(replacement_raw, original, target, spec)
-                font_code, font_std = self._get_font_properties(span["font"])
+                # Convert int flags to dict if needed
+                raw_flags = span.get("flags")
+                font_flags = self._parse_flags(raw_flags)
+                font_props = self._font_resolver.resolve(
+                    span["font"],
+                    font_flags=font_flags,
+                    custom_fonts=self._custom_fonts,
+                )
                 return {
                     "bbox": span["bbox"],
                     "origin": span["origin"],
                     "text": new_text,
                     "url": url,
-                    "font_code": font_code,
-                    "font_std": font_std,
+                    "fontname": font_props.fontname,
+                    "fontfile": font_props.fontfile,
                     "size": span["size"],
                     "color": span["color"],
                 }
@@ -422,7 +465,13 @@ class PDFModifier:
 
         matched_text = merged[m_start:m_end]
         new_text, url = self._resolve_replacement(replacement_raw, matched_text, target, spec)
-        font_code, font_std = self._get_font_properties(first_span["font"])
+        raw_flags = first_span.get("flags")
+        font_flags = self._parse_flags(raw_flags)
+        font_props = self._font_resolver.resolve(
+            first_span["font"],
+            font_flags=font_flags,
+            custom_fonts=self._custom_fonts,
+        )
 
         return {
             "bbox": (x0, y0, x1, y1),
@@ -430,8 +479,8 @@ class PDFModifier:
             "origin": first_span["origin"],
             "text": new_text,
             "url": url,
-            "font_code": font_code,
-            "font_std": font_std,
+            "fontname": font_props.fontname,
+            "fontfile": font_props.fontfile,
             "size": first_span["size"],
             "color": first_span["color"],
         }
@@ -489,7 +538,11 @@ class PDFModifier:
     ) -> None:
         """Insert a hyperlink for the replacement text."""
         try:
-            font = fitz.Font(item["font_std"])
+            fontname = item["fontname"]
+            fontfile = item.get("fontfile")
+            if fontfile:
+                fontname = f"__custom_{Path(fontfile).stem}__"
+            font = fitz.Font(fontname=fontname, fontfile=fontfile)
             text_width = font.text_length(item["text"], fontsize=item["size"])
             x0 = item["origin"][0]
             y_baseline = item["origin"][1]
@@ -508,12 +561,22 @@ class PDFModifier:
     def _insert_replacement(self, page: fitz.Page, item: dict[str, Any]) -> None:
         """Insert replacement text with original styling."""
         color = self._convert_color(item["color"])
+        fontname = item["fontname"]
+        fontfile = item.get("fontfile")
+
+        # PyMuPDF ignores fontfile when fontname is a Base 14 font.
+        # When a custom fontfile is provided, use a non-Base14 fontname
+        # so PyMuPDF treats it as a custom embedded font.
+        if fontfile:
+            fontname = f"__custom_{Path(fontfile).stem}__"
+
         page.insert_text(
             item["origin"],
             item["text"],
-            fontname=item["font_code"],
+            fontname=fontname,
             fontsize=item["size"],
             color=color,
+            fontfile=fontfile,
         )
 
         link_url = item["url"]
@@ -528,6 +591,7 @@ def batch_process(
     output_dir: str | Path,
     spec: ReplacementSpec,
     password: str | None = None,
+    custom_fonts: dict[str, str] | None = None,
 ) -> BatchResult:
     """
     Apply the same replacements to multiple PDF files.
@@ -541,6 +605,7 @@ def batch_process(
         output_dir: Directory where modified PDFs will be saved.
         spec: ReplacementSpec containing replacements and options.
         password: Optional password for encrypted PDFs.
+        custom_fonts: Optional map of alias -> font file path.
 
     Returns:
         BatchResult with per-file results and aggregate statistics.
@@ -560,7 +625,12 @@ def batch_process(
             continue
 
         try:
-            modifier = PDFModifier(str(file_path), str(output_path), password=password)
+            modifier = PDFModifier(
+                str(file_path),
+                str(output_path),
+                password=password,
+                custom_fonts=custom_fonts,
+            )
             result = modifier.process(spec)
             results.append(result)
         except Exception as e:

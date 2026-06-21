@@ -7,7 +7,7 @@ Human-friendly command-line interface with colored output.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -18,6 +18,24 @@ from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
 from ..core.modifier import PDFModifier, batch_process
 from ..logger import setup_logging
+
+
+def _parse_custom_fonts(ctx: Any, fonts: list[str] | None) -> dict[str, str] | None:
+    """Parse --custom-fonts KEY=PATH options into a dict."""
+    if not fonts:
+        return None
+    result: dict[str, str] = {}
+    for item in fonts:
+        if "=" not in item:
+            console.print(
+                f"[red]Error:[/] Invalid custom font format '{item}'. "
+                f"Use 'alias=/path/to/font.ttf'."
+            )
+            raise typer.Exit(code=1)
+        alias, path = item.split("=", 1)
+        result[alias] = path
+    return result
+
 
 logger = setup_logging(__name__)
 
@@ -55,6 +73,13 @@ def modify(
             "--pages",
             "-P",
             help="Page range to process, e.g. '1-3' or '5'. Defaults to all pages.",
+        ),
+    ] = None,
+    custom_fonts: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--custom-fonts",
+            help="Custom font mapping. Format: 'alias=/path/to/font.ttf'. Repeatable.",
         ),
     ] = None,
 ) -> None:
@@ -101,10 +126,12 @@ def modify(
 
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
+        cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
         modifier = PDFModifier(
             str(input_pdf.absolute()),
             str(output_pdf.absolute()),
             password=password,
+            custom_fonts=cf,
         )
 
         with console.status("[bold green]Modifying PDF...", spinner="dots"):
@@ -121,6 +148,10 @@ def modify(
     except PDFModifierError as e:
         logger.error(f"Modification error: {e.message}")
         console.print(f"[red]Error:[/] {e.message}")
+        raise typer.Exit(code=1) from None
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        console.print(f"[red]Error:[/] {e}")
         raise typer.Exit(code=1) from None
     except Exception:
         logger.exception("Unexpected error in CLI modify")
@@ -154,6 +185,13 @@ def batch(
         str | None,
         typer.Option("--password", "-p", help="Password if PDFs are encrypted"),
     ] = None,
+    custom_fonts: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--custom-fonts",
+            help="Custom font mapping. Format: 'alias=/path/to/font.ttf'. Repeatable.",
+        ),
+    ] = None,
 ) -> None:
     """
     Apply the same replacements to multiple PDF files.
@@ -168,9 +206,7 @@ def batch(
     replacements: dict[str, str] = {}
     for item in replace:
         if "=" not in item:
-            console.print(
-                f"[yellow]Warning:[/] Skipping invalid format" f" '{item}'. Use 'old=new'."
-            )
+            console.print(f"[yellow]Warning:[/] Skipping invalid format '{item}'. Use 'old=new'.")
             continue
         old, new = item.split("=", 1)
         replacements[old] = new
@@ -181,9 +217,16 @@ def batch(
 
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
+        cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
 
         with console.status("[bold green]Processing batch...", spinner="dots"):
-            result = batch_process(input_pdfs, output_dir, spec, password=password)
+            result = batch_process(
+                input_pdfs,
+                output_dir,
+                spec,
+                password=password,
+                custom_fonts=cf,
+            )
 
         table = Table(title="Batch Results")
         table.add_column("File", style="cyan")

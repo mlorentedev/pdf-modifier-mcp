@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -126,3 +127,62 @@ class BatchResult(BaseModel):
     failed: int
     results: list[ModificationResult]
     errors: list[dict[str, str]] = Field(default_factory=list)
+
+
+# --- Font Models ---
+
+
+class FontProperties(BaseModel):
+    """Resolved font properties for text insertion.
+
+    Combines the font identifier (Base 14 code or custom alias) with
+    style flags and an optional custom font file path.
+
+    Example:
+        >>> props = FontProperties(fontname="helv", is_bold=False)
+        >>> props = FontProperties(fontname="arial", fontfile="/path/to/arial.ttf", is_bold=True)
+    """
+
+    fontname: str = Field(description="Font identifier (Base 14 code or custom alias)")
+    fontfile: str | None = Field(
+        default=None,
+        description="Path to a custom TTF/OTF font file (None for Base 14 fonts)",
+    )
+    is_bold: bool = Field(default=False, description="Whether the font is bold")
+    is_italic: bool = Field(default=False, description="Whether the font is italic")
+    is_serif: bool = Field(default=False, description="Whether the font is serif")
+    is_monospaced: bool = Field(default=False, description="Whether the font is monospaced")
+    embed: bool = Field(
+        default=True,
+        description="Whether the font should be embedded in the output PDF",
+    )
+
+    @model_validator(mode="after")
+    def validate_fontfile(self) -> FontProperties:
+        """Validate that fontfile exists when provided."""
+        if self.fontfile is not None and not Path(self.fontfile).exists():
+            raise ValueError(f"font file does not exist: {self.fontfile}")
+        return self
+
+
+class EmbeddedFontInfo(BaseModel):
+    """Metadata and buffer for an embedded font in a PDF.
+
+    Example:
+        >>> info = EmbeddedFontInfo(
+        ...     name="Arial Regular",
+        ...     type="TrueType",
+        ...     subtype="ttf",
+        ...     buffer=b"...",
+        ...     page_numbers=[1, 2],
+        ... )
+    """
+
+    name: str = Field(description="Human-readable font name")
+    type: str = Field(description="Font type (TrueType, Type1, Type0, CID, etc.)")
+    subtype: str = Field(description="Font subtype (ttf, helv, etc.)")
+    buffer: bytes = Field(description="Raw font file bytes")
+    page_numbers: list[int] = Field(
+        default_factory=list,
+        description="Page numbers where this font appears",
+    )

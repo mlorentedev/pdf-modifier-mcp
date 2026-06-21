@@ -252,6 +252,55 @@ def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
 
 @mcp.tool()
 @handle_mcp_errors
+def extract_embedded_fonts(input_path: str, password: str | None = None) -> str:
+    """
+    Extract metadata and buffers of all embedded fonts in a PDF.
+
+    Use this tool to inspect which fonts are actually embedded in a document.
+    Custom fonts (TrueType, OpenType) appear as Type0 with their binary
+    buffer. Base 14 system fonts (Helvetica, Times, Courier) are NOT
+    embedded and will not appear in the results.
+
+    Args:
+        input_path: Absolute path to the PDF file to inspect.
+        password: Optional password if the PDF is encrypted.
+
+    Returns:
+        JSON string with embedded font metadata including:
+        - name: human-readable font name
+        - type: font type (Type0, TrueType, etc.)
+        - subtype: font subtype (ttf, etc.)
+        - buffer_size: size of the font buffer in bytes
+        - page_numbers: pages where this font appears
+
+    Example:
+        extract_embedded_fonts("/path/to/document.pdf")
+    """
+    analyzer = PDFAnalyzer(input_path, password=password)
+    fonts = analyzer.extract_embedded_fonts()
+
+    return json.dumps(
+        {
+            "success": True,
+            "file_path": input_path,
+            "total_fonts": len(fonts),
+            "fonts": [
+                {
+                    "name": f.name,
+                    "type": f.type,
+                    "subtype": f.subtype,
+                    "buffer_size": len(f.buffer),
+                    "page_numbers": f.page_numbers,
+                }
+                for f in fonts
+            ],
+        },
+        indent=2,
+    )
+
+
+@mcp.tool()
+@handle_mcp_errors
 def batch_modify_pdf_content(
     input_paths: list[str],
     output_dir: str,
