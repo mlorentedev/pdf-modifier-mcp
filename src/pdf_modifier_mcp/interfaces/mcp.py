@@ -130,6 +130,7 @@ def modify_pdf_content(
     replacements: dict[str, str],
     use_regex: bool = False,
     password: str | None = None,
+    pages: str | None = None,
 ) -> str:
     """
     Find and replace text in a PDF while preserving font styles.
@@ -154,6 +155,11 @@ def modify_pdf_content(
     - Useful for matching dates, IDs, or variable content
     - Example: {"Order #\\d+": "Order #REDACTED"}
 
+    PAGE RANGE:
+    - Use pages="1-3" to process only pages 1 through 3 (1-indexed, inclusive)
+    - Use pages="5" to process only page 5
+    - Omit to process all pages
+
     Args:
         input_path: Absolute path to the source PDF file.
         output_path: Absolute path where the modified PDF will be saved.
@@ -164,6 +170,7 @@ def modify_pdf_content(
         use_regex: If true, treat replacement keys as regex patterns.
                   Default is false for literal string matching.
         password: Optional password if the source PDF is encrypted.
+        pages: Optional page range, e.g. "1-3" or "5". Defaults to all pages.
 
     Returns:
         JSON string with modification results including:
@@ -194,10 +201,27 @@ def modify_pdf_content(
             "/path/output.pdf",
             {"Learn More": "Visit Website|https://example.com"}
         )
+
+        # Only modify pages 1-2
+        modify_pdf_content(
+            "/path/input.pdf",
+            "/path/output.pdf",
+            {"Draft": "Final"},
+            pages="1-2"
+        )
     """
     spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+
+    page_range: tuple[int, int] | None = None
+    if pages:
+        parts = pages.split("-")
+        if len(parts) == 1:
+            page_range = (int(parts[0]), int(parts[0]))
+        elif len(parts) == 2:
+            page_range = (int(parts[0]), int(parts[1]))
+
     modifier = PDFModifier(input_path, output_path, password=password)
-    result = modifier.process(spec)
+    result = modifier.process(spec, pages=page_range)
     return result.model_dump_json(indent=2)
 
 

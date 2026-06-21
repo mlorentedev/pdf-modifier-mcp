@@ -49,6 +49,14 @@ def modify(
         str | None,
         typer.Option("--password", "-p", help="Password if PDF is encrypted"),
     ] = None,
+    pages: Annotated[
+        str | None,
+        typer.Option(
+            "--pages",
+            "-P",
+            help="Page range to process, e.g. '1-3' or '5'. Defaults to all pages.",
+        ),
+    ] = None,
 ) -> None:
     """
     Modify a PDF by finding and replacing text while preserving font style.
@@ -57,6 +65,7 @@ def modify(
         pdf-mod modify input.pdf output.pdf -r "old text=new text"
         pdf-mod modify input.pdf output.pdf -r "$99.99=$149.99" --regex
         pdf-mod modify input.pdf output.pdf -r "Click Here=Visit Site|https://example.com"
+        pdf-mod modify input.pdf output.pdf -r "Hello=Hi" --pages 1-3
     """
     replacements = {}
     for item in replace:
@@ -70,6 +79,26 @@ def modify(
         console.print("[red]Error:[/] No valid replacements provided.")
         raise typer.Exit(code=1)
 
+    page_range: tuple[int, int] | None = None
+    if pages:
+        parts = pages.split("-")
+        if len(parts) == 1:
+            try:
+                page_range = (int(parts[0]), int(parts[0]))
+            except ValueError:
+                console.print(f"[red]Error:[/] Invalid page number: '{parts[0]}'")
+                raise typer.Exit(code=1) from None
+        elif len(parts) == 2:
+            try:
+                start, end = int(parts[0]), int(parts[1])
+                page_range = (start, end)
+            except ValueError:
+                console.print(f"[red]Error:[/] Invalid page range: '{pages}'")
+                raise typer.Exit(code=1) from None
+        else:
+            console.print(f"[red]Error:[/] Invalid page range format: '{pages}'. Use '1-3' or '5'.")
+            raise typer.Exit(code=1)
+
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
         modifier = PDFModifier(
@@ -79,7 +108,7 @@ def modify(
         )
 
         with console.status("[bold green]Modifying PDF...", spinner="dots"):
-            result = modifier.process(spec)
+            result = modifier.process(spec, pages=page_range)
 
         console.print(f"[green]Success:[/] Saved to {result.output_path}")
         console.print(f"  Replacements: {result.replacements_made}")
