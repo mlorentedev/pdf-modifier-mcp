@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.5.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.3...v1.5.0) (2026-06-21)
+
+
+### Features
+
+* **core:** custom font support with FontResolver pattern ([#86](https://github.com/mlorentedev/pdf-modifier-mcp/issues/86)) ([09e7e45](https://github.com/mlorentedev/pdf-modifier-mcp/commit/09e7e45e6af8682875d7d8190a3fdb5a203a5594)), closes [#3](https://github.com/mlorentedev/pdf-modifier-mcp/issues/3)
+* **core:** page range support for targeted PDF modifications ([#84](https://github.com/mlorentedev/pdf-modifier-mcp/issues/84)) ([68e1c19](https://github.com/mlorentedev/pdf-modifier-mcp/commit/68e1c1935e2f485e2e6217a83096a62dd530d71d))
+
 ## [1.4.3](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.2...v1.4.3) (2026-06-20)
 
 
