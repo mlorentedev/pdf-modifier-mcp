@@ -274,7 +274,7 @@ class TestCrossSpanMatching:
         item = cross_items[0]
         assert len(item["bboxes"]) >= 2
         # First span is Helvetica
-        assert item["font_code"] == "helv"
+        assert item["fontname"] == "helv"
 
     def test_no_duplicate_matches(self, tmp_path: Path) -> None:
         """Single-span matches are not duplicated by cross-span pass."""

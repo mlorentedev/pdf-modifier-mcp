@@ -130,6 +130,7 @@ def modify_pdf_content(
     replacements: dict[str, str],
     use_regex: bool = False,
     password: str | None = None,
+    pages: str | None = None,
 ) -> str:
     """
     Find and replace text in a PDF while preserving font styles.
@@ -154,6 +155,11 @@ def modify_pdf_content(
     - Useful for matching dates, IDs, or variable content
     - Example: {"Order #\\d+": "Order #REDACTED"}
 
+    PAGE RANGE:
+    - Use pages="1-3" to process only pages 1 through 3 (1-indexed, inclusive)
+    - Use pages="5" to process only page 5
+    - Omit to process all pages
+
     Args:
         input_path: Absolute path to the source PDF file.
         output_path: Absolute path where the modified PDF will be saved.
@@ -164,6 +170,7 @@ def modify_pdf_content(
         use_regex: If true, treat replacement keys as regex patterns.
                   Default is false for literal string matching.
         password: Optional password if the source PDF is encrypted.
+        pages: Optional page range, e.g. "1-3" or "5". Defaults to all pages.
 
     Returns:
         JSON string with modification results including:
@@ -194,10 +201,27 @@ def modify_pdf_content(
             "/path/output.pdf",
             {"Learn More": "Visit Website|https://example.com"}
         )
+
+        # Only modify pages 1-2
+        modify_pdf_content(
+            "/path/input.pdf",
+            "/path/output.pdf",
+            {"Draft": "Final"},
+            pages="1-2"
+        )
     """
     spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+
+    page_range: tuple[int, int] | None = None
+    if pages:
+        parts = pages.split("-")
+        if len(parts) == 1:
+            page_range = (int(parts[0]), int(parts[0]))
+        elif len(parts) == 2:
+            page_range = (int(parts[0]), int(parts[1]))
+
     modifier = PDFModifier(input_path, output_path, password=password)
-    result = modifier.process(spec)
+    result = modifier.process(spec, pages=page_range)
     return result.model_dump_json(indent=2)
 
 
@@ -224,6 +248,55 @@ def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
     analyzer = PDFAnalyzer(input_path, password=password)
     result = analyzer.get_hyperlinks()
     return result.model_dump_json(indent=2)
+
+
+@mcp.tool()
+@handle_mcp_errors
+def extract_embedded_fonts(input_path: str, password: str | None = None) -> str:
+    """
+    Extract metadata and buffers of all embedded fonts in a PDF.
+
+    Use this tool to inspect which fonts are actually embedded in a document.
+    Custom fonts (TrueType, OpenType) appear as Type0 with their binary
+    buffer. Base 14 system fonts (Helvetica, Times, Courier) are NOT
+    embedded and will not appear in the results.
+
+    Args:
+        input_path: Absolute path to the PDF file to inspect.
+        password: Optional password if the PDF is encrypted.
+
+    Returns:
+        JSON string with embedded font metadata including:
+        - name: human-readable font name
+        - type: font type (Type0, TrueType, etc.)
+        - subtype: font subtype (ttf, etc.)
+        - buffer_size: size of the font buffer in bytes
+        - page_numbers: pages where this font appears
+
+    Example:
+        extract_embedded_fonts("/path/to/document.pdf")
+    """
+    analyzer = PDFAnalyzer(input_path, password=password)
+    fonts = analyzer.extract_embedded_fonts()
+
+    return json.dumps(
+        {
+            "success": True,
+            "file_path": input_path,
+            "total_fonts": len(fonts),
+            "fonts": [
+                {
+                    "name": f.name,
+                    "type": f.type,
+                    "subtype": f.subtype,
+                    "buffer_size": len(f.buffer),
+                    "page_numbers": f.page_numbers,
+                }
+                for f in fonts
+            ],
+        },
+        indent=2,
+    )
 
 
 @mcp.tool()
