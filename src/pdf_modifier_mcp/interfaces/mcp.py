@@ -17,7 +17,7 @@ from fastmcp import FastMCP
 from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
-from ..core.modifier import PDFModifier, batch_process
+from ..core.modifier import DEFAULT_MAX_FILE_SIZE_BYTES, PDFModifier, batch_process
 from ..logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -52,7 +52,11 @@ def handle_mcp_errors(func: Callable[..., str]) -> Callable[..., str]:
 
 @mcp.tool()
 @handle_mcp_errors
-def read_pdf_structure(input_path: str, password: str | None = None) -> str:
+def read_pdf_structure(
+    input_path: str,
+    password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+) -> str:
     """
     Extract the complete structural content of a PDF document.
 
@@ -73,6 +77,7 @@ def read_pdf_structure(input_path: str, password: str | None = None) -> str:
         input_path: Absolute path to the PDF file to analyze.
                    Must be a valid, accessible PDF file.
         password: Optional password if the PDF is encrypted.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string containing the complete page structure.
@@ -81,14 +86,19 @@ def read_pdf_structure(input_path: str, password: str | None = None) -> str:
     Example:
         read_pdf_structure("/home/user/documents/invoice.pdf")
     """
-    analyzer = PDFAnalyzer(input_path, password=password)
+    analyzer = PDFAnalyzer(input_path, password=password, max_file_size=max_file_size)
     result = analyzer.get_structure()
     return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
 @handle_mcp_errors
-def inspect_pdf_fonts(input_path: str, terms: list[str], password: str | None = None) -> str:
+def inspect_pdf_fonts(
+    input_path: str,
+    terms: list[str],
+    password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+) -> str:
     """
     Search for specific text terms and report their font properties.
 
@@ -109,6 +119,7 @@ def inspect_pdf_fonts(input_path: str, terms: list[str], password: str | None = 
         terms: List of text strings to search for (1-50 terms).
                Each term is searched as a substring.
         password: Optional password if the PDF is encrypted.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string with all matches and their font properties.
@@ -117,7 +128,7 @@ def inspect_pdf_fonts(input_path: str, terms: list[str], password: str | None = 
     Example:
         inspect_pdf_fonts("/path/to/doc.pdf", ["Invoice", "$99.99", "Total"])
     """
-    analyzer = PDFAnalyzer(input_path, password=password)
+    analyzer = PDFAnalyzer(input_path, password=password, max_file_size=max_file_size)
     result = analyzer.inspect_fonts(terms)
     return result.model_dump_json(indent=2)
 
@@ -131,6 +142,7 @@ def modify_pdf_content(
     use_regex: bool = False,
     password: str | None = None,
     pages: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
 ) -> str:
     """
     Find and replace text in a PDF while preserving font styles.
@@ -171,6 +183,7 @@ def modify_pdf_content(
                   Default is false for literal string matching.
         password: Optional password if the source PDF is encrypted.
         pages: Optional page range, e.g. "1-3" or "5". Defaults to all pages.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string with modification results including:
@@ -220,14 +233,23 @@ def modify_pdf_content(
         elif len(parts) == 2:
             page_range = (int(parts[0]), int(parts[1]))
 
-    modifier = PDFModifier(input_path, output_path, password=password)
+    modifier = PDFModifier(
+        input_path,
+        output_path,
+        password=password,
+        max_file_size=max_file_size,
+    )
     result = modifier.process(spec, pages=page_range)
     return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
 @handle_mcp_errors
-def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
+def list_pdf_hyperlinks(
+    input_path: str,
+    password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+) -> str:
     """
     Extract all existing hyperlinks and clickable URIs from a PDF.
 
@@ -238,6 +260,7 @@ def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
     Args:
         input_path: Absolute path to the PDF file to scan.
         password: Optional password if the PDF is encrypted.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string with the inventory of found hyperlinks.
@@ -245,14 +268,18 @@ def list_pdf_hyperlinks(input_path: str, password: str | None = None) -> str:
     Example:
         list_pdf_hyperlinks("/path/to/report.pdf")
     """
-    analyzer = PDFAnalyzer(input_path, password=password)
+    analyzer = PDFAnalyzer(input_path, password=password, max_file_size=max_file_size)
     result = analyzer.get_hyperlinks()
     return result.model_dump_json(indent=2)
 
 
 @mcp.tool()
 @handle_mcp_errors
-def extract_embedded_fonts(input_path: str, password: str | None = None) -> str:
+def extract_embedded_fonts(
+    input_path: str,
+    password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+) -> str:
     """
     Extract metadata and buffers of all embedded fonts in a PDF.
 
@@ -264,6 +291,7 @@ def extract_embedded_fonts(input_path: str, password: str | None = None) -> str:
     Args:
         input_path: Absolute path to the PDF file to inspect.
         password: Optional password if the PDF is encrypted.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string with embedded font metadata including:
@@ -276,7 +304,7 @@ def extract_embedded_fonts(input_path: str, password: str | None = None) -> str:
     Example:
         extract_embedded_fonts("/path/to/document.pdf")
     """
-    analyzer = PDFAnalyzer(input_path, password=password)
+    analyzer = PDFAnalyzer(input_path, password=password, max_file_size=max_file_size)
     fonts = analyzer.extract_embedded_fonts()
 
     return json.dumps(
@@ -307,6 +335,7 @@ def batch_modify_pdf_content(
     replacements: dict[str, str],
     use_regex: bool = False,
     password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
 ) -> str:
     """
     Apply the same text replacements to multiple PDF files at once.
@@ -321,6 +350,7 @@ def batch_modify_pdf_content(
         replacements: Dictionary mapping old text to new text.
         use_regex: If true, treat keys as regex patterns.
         password: Optional password if PDFs are encrypted.
+        max_file_size: Maximum allowed input file size in bytes (default: 100 MB).
 
     Returns:
         JSON string with batch results including per-file status.
@@ -333,7 +363,13 @@ def batch_modify_pdf_content(
         )
     """
     spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
-    result = batch_process(input_paths, output_dir, spec, password=password)
+    result = batch_process(
+        input_paths,
+        output_dir,
+        spec,
+        password=password,
+        max_file_size=max_file_size,
+    )
     return result.model_dump_json(indent=2)
 
 
