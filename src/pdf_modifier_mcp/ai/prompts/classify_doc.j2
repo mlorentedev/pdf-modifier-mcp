@@ -1,0 +1,23 @@
+You are a document classification AI. Classify the following document.
+
+Document text:
+{{ pdf_text }}
+
+Classify into one of these types:
+- invoice
+- contract
+- cv_resume
+- report
+- letter
+- receipt
+- form
+- other
+
+Return a JSON object:
+{
+  "document_type": "one_of_the_types_above",
+  "confidence": 0.95,
+  "alternatives": [
+    {"type": "second_choice", "confidence": 0.1}
+  ]
+}
