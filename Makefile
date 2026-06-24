@@ -98,8 +98,8 @@ up: ## Build all images and start the full dev stack
 	@echo "  └─────────────────────────────────────────────┘"
 
 down: ## Stop and remove all compose services + volumes
-	$(COMPOSE) $(COMPOSE_FILES) down -v --remove-orphans
-	@echo "✓ Stack down (volumes removed)."
+	$(COMPOSE) $(COMPOSE_FILES) down --remove-orphans
+	@echo "✓ Stack down (volumes preserved for speed)."
 
 logs: ## Follow logs from all services
 	$(COMPOSE) $(COMPOSE_FILES) logs -f --tail=100
