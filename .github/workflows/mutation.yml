@@ -35,13 +35,13 @@ jobs:
       - name: Run mutmut
         working-directory: backend
         run: |
-          mutmut run --paths-to-mutate=src --no-coverage --tests-dir tests --include-ignored
+          uv run mutmut run --paths-to-mutate=src --no-coverage --tests-dir tests --include-ignored
 
       - name: Check mutation score
         working-directory: backend
         run: |
-          TOTAL=$(mutmut results 2>/dev/null | grep -c "survived\|eliminated\|timeout\|stopped\|uncertain\|no tests run" || echo 0)
-          SURVIVED=$(mutmut results 2>/dev/null | grep -c "survived" || echo 0)
+          TOTAL=$(uv run mutmut results 2>/dev/null | grep -c "survived\|eliminated\|timeout\|stopped\|uncertain\|no tests run" || echo 0)
+          SURVIVED=$(uv run mutmut results 2>/dev/null | grep -c "survived" || echo 0)
           if [ "$TOTAL" -gt 0 ]; then
             SCORE=$(( (TOTAL - SURVIVED) * 100 / TOTAL ))
           else
