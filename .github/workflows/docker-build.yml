@@ -120,7 +120,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           docker run -d --name test-web -p 8080:80 ${{ env.IMAGE_FRONTEND }}:latest
-          sleep 3
+          sleep 5
           curl -f http://localhost:8080/health || exit 1
           docker stop test-web && docker rm test-web
 

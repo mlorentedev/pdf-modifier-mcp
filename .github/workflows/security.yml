@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v8
+        uses: gitleaks/gitleaks-action@v8.18.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -50,7 +50,7 @@ jobs:
         working-directory: backend
         run: |
           uv pip install pip-audit
-          uv pip freeze | pip-audit -n 10
+          uv run pip-audit -n 10
 
   bandit:
     name: Bandit (Python security linter)
@@ -76,5 +76,5 @@ jobs:
       - name: Run bandit
         working-directory: backend
         run: |
-          bandit -r src -ll --skip B101,B104 -f json -o bandit-report.json
+          uv run bandit -r src -ll --skip B101,B104 -f json -o bandit-report.json
           cat bandit-report.json || echo "No issues found"
