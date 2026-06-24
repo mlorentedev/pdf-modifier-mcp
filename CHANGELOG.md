@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.6.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.5.0...v1.6.0) (2026-06-24)
+
+
+### Features
+
+* **ai:** NaN Cloud AI layer with model router + throttle ([#88](https://github.com/mlorentedev/pdf-modifier-mcp/issues/88)) ([ae05deb](https://github.com/mlorentedev/pdf-modifier-mcp/commit/ae05deb36ff6cabd60c21deceaf22209705ca6f5))
+* **web:** FastAPI + SvelteKit web UI for PDF editing ([#89](https://github.com/mlorentedev/pdf-modifier-mcp/issues/89)) ([e1ea0eb](https://github.com/mlorentedev/pdf-modifier-mcp/commit/e1ea0ebec48c026f51354e5e7503420e60f7380b))
+
 ## [1.5.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.4.3...v1.5.0) (2026-06-21)
 
 
