@@ -1,0 +1,24 @@
+You are a PII redaction AI. Find all personally identifiable information in this document.
+
+Document text:
+{{ pdf_text }}
+
+Find and return all PII items including:
+- Names (person names)
+- Emails
+- Phone numbers
+- NIF/Tax IDs
+- Credit card numbers
+- Addresses
+- Dates of birth
+
+Return a JSON object:
+{
+  "items": [
+    {
+      "pii_type": "email|phone|nif|credit_card|name|address|dob|other",
+      "value": "the_found_value",
+      "suggested_replacement": "[REDACTED]"
+    }
+  ]
+}
