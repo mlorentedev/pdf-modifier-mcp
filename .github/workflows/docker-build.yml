@@ -42,7 +42,8 @@ jobs:
         id: version
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
           fi
@@ -91,7 +92,8 @@ jobs:
         id: version
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
           fi
