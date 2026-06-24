@@ -6,20 +6,23 @@ on:
   pull_request:
     branches: [master]
   schedule:
-    # Weekly scan on Monday mornings
     - cron: "0 9 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   gitleaks:
     name: Gitleaks (secrets scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
         with:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@60b09a06163b5e0c1e795f5a5e5b1c8e0e1e5c1e  # v8.18.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -27,10 +30,10 @@ jobs:
     name: Pip audit (dependency vulnerabilities)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@f104b378463c3e08ed38dd05a15537ad289ba78f  # v5.1.0
         with:
           enable-cache: true
 
@@ -38,11 +41,13 @@ jobs:
         run: uv python install 3.12
 
       - name: Install deps
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e ".[dev]"
 
       - name: Run pip-audit
+        working-directory: backend
         run: |
           uv pip freeze | pip-audit -n 10
 
@@ -50,10 +55,10 @@ jobs:
     name: Bandit (Python security linter)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@f104b378463c3e08ed38dd05a15537ad289ba78f  # v5.1.0
         with:
           enable-cache: true
 
@@ -61,12 +66,14 @@ jobs:
         run: uv python install 3.12
 
       - name: Install deps
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e ".[dev]"
           uv pip install bandit[toml]
 
       - name: Run bandit
+        working-directory: backend
         run: |
-          bandit -r src -ll --skip B101,B104 -f json -o bandit-report.json || true
+          bandit -r src -ll --skip B101,B104 -f json -o bandit-report.json
           cat bandit-report.json || echo "No issues found"

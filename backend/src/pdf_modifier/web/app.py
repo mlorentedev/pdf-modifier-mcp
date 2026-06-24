@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from importlib.metadata import PackageNotFoundError, version
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +16,16 @@ from .routes import ai_router, health_router, pdf_router
 logger = setup_logging(__name__)
 
 
+def _get_version() -> str:
+    """Get package version from metadata (single source of truth)."""
+    try:
+        return version("pdf-modifier-mcp")
+    except PackageNotFoundError:
+        return "0.0.0-dev"
+
+
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> None:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan — startup and shutdown hooks."""
     logger.info("Web API starting up")
     yield
@@ -37,7 +47,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app = FastAPI(
         title="PDF Modifier MCP",
         description="PDF text modification API with CLI and MCP interfaces.",
-        version="1.5.0",
+        version=_get_version(),
         lifespan=lifespan,
     )
 

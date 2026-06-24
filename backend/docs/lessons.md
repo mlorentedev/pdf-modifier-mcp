@@ -50,6 +50,7 @@ owner: manu
 - Fase runtime: crear venv limpio, instalar wheels, instalar package con `pip install .` (necesita pyproject.toml en el directorio).
 - Orden estricto: COPY todo → RUN install → RUN mkdir+chown → USER → CMD.
 - Verificar con `docker run --entrypoint ls` antes de correr.
+- El error de `pip install .` sin pyproject.toml es **visible en build**, no silencioso: `ERROR: Directory '.' is not installable. Neither 'setup.py' nor 'pyproject.toml' found.`
 **Tags:** `#docker` `#multi-stage` `#venv` `#windows-wsl` `#python`
 
 ### [2026-03-14] Worktree agents lose staged changes when main repo branch operations interfere

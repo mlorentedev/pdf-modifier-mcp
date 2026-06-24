@@ -56,7 +56,7 @@ Thumbs.db
 .env
 .env.*
 *.env
-!env.example
+!.env.example
 
 # Docker files (not needed inside image)
 docker-compose*.yml

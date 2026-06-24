@@ -30,7 +30,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~120
 
 ### Task 1.3: FontResolver tests
-- **File**: `tests/unit/test_font_resolver.py` (NEW)
+- **File**: `tests/unit/core/test_font_resolver.py` (NEW)
 - **Description**: Comprehensive tests for FontResolver
 - **Acceptance**:
   - Test Base 14 font resolution (existing behavior preserved)
@@ -54,7 +54,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~60
 
 ### Task 2.2: PDFModifier custom font tests
-- **File**: `tests/unit/test_modifier_custom_fonts.py` (NEW)
+- **File**: `tests/unit/core/test_modifier_custom_fonts.py` (NEW)
 - **Description**: Tests for custom font integration
 - **Acceptance**:
   - Test replacement with custom TTF font
@@ -88,7 +88,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~40
 
 ### Task 3.2: Embedded font extraction tests
-- **File**: `tests/unit/test_analyzer_embedded_fonts.py` (NEW)
+- **File**: `tests/unit/core/test_analyzer_embedded_fonts.py` (NEW)
 - **Description**: Tests for embedded font extraction
 - **Acceptance**:
   - Test extraction from PDF with embedded custom font

@@ -7,18 +7,6 @@ from pathlib import Path
 from ..core.exceptions import PDFModifierError
 from ..logger import setup_logging
 
-
-def _validate_session_id(session_id: str) -> str:
-    """Validate session_id to prevent path traversal attacks."""
-    # Reject absolute paths and path traversal
-    if "/" in session_id or "\\" in session_id:
-        raise StorageError(f"Invalid session_id: {session_id}")
-    safe = Path(session_id).name
-    if safe != session_id:
-        raise StorageError(f"Invalid session_id: {session_id}")
-    return safe
-
-
 logger = setup_logging(__name__)
 
 PDF_MAGIC = b"%PDF"
@@ -28,6 +16,26 @@ class StorageError(PDFModifierError):
     """Raised on storage operations failure."""
 
     code = "STORAGE_ERROR"
+
+
+def _validate_session_id(session_id: str) -> str:
+    """Validate session_id to prevent path traversal attacks.
+
+    Args:
+        session_id: The session identifier to validate.
+
+    Returns:
+        Sanitized session ID (basename only).
+
+    Raises:
+        StorageError: If session_id contains path traversal characters.
+    """
+    if "/" in session_id or "\\" in session_id:
+        raise StorageError(f"Invalid session_id: {session_id}")
+    safe = Path(session_id).name
+    if safe != session_id:
+        raise StorageError(f"Invalid session_id: {session_id}")
+    return safe
 
 
 class PDFStorage:

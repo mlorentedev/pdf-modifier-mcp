@@ -1,0 +1,5 @@
+# Environment variables (secrets)
+.env
+
+# Docker volumes (persistent data)
+storage-data/

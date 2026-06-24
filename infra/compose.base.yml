@@ -1,18 +1,21 @@
 # =============================================================================
 # compose.base.yml — shared service definitions (base layer)
-# Included by dev and prod variants.
 # =============================================================================
+
+name: pdf-modifier
 
 services:
   api:
     build:
-      context: ..
+      context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - PATH=/opt/venv/bin:$PATH
     volumes:
       - storage-data:/app/storage
     healthcheck:
@@ -26,16 +29,16 @@ services:
 
   web:
     build:
-      context: ..
+      context: ../frontend
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/nginx-health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/health"]
       interval: 30s
       timeout: 3s
       retries: 3
