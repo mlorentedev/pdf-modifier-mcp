@@ -15,10 +15,10 @@ jobs:
   mutation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@f104b378463c3e08ed38dd05a15537ad289ba78f  # v5.1.0
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 

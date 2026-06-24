@@ -17,12 +17,12 @@ jobs:
     name: Gitleaks (secrets scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@60b09a06163b5e0c1e795f5a5e5b1c8e0e1e5c1e  # v8.18.0
+        uses: gitleaks/gitleaks-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -30,10 +30,10 @@ jobs:
     name: Pip audit (dependency vulnerabilities)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@f104b378463c3e08ed38dd05a15537ad289ba78f  # v5.1.0
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
@@ -55,10 +55,10 @@ jobs:
     name: Bandit (Python security linter)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f68bec36d5c  # v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@f104b378463c3e08ed38dd05a15537ad289ba78f  # v5.1.0
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
