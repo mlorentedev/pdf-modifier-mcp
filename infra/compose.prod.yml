@@ -1,0 +1,31 @@
+# =============================================================================
+# compose.prod.yml — production overrides (resource limits, hardened)
+# Usage: docker compose -f infra/compose.base.yml -f infra/compose.prod.yml up -d
+# =============================================================================
+
+services:
+  api:
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - DEBUG=false
+    # Resource limits to prevent OOM
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  web:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M

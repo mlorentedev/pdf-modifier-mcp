@@ -1,0 +1,43 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    paths:
+      - "backend/**"
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install deps
+        working-directory: backend
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+          uv pip install mutmut
+
+      - name: Run mutmut
+        working-directory: backend
+        run: |
+          uv run mutmut run
+
+      - name: Check mutation score
+        working-directory: backend
+        run: |
+          uv run mutmut results || true

@@ -1,0 +1,16 @@
+# =============================================================================
+# compose.dev.yml — development overrides (hot-reload, bind mounts)
+# Usage: docker compose -f infra/compose.base.yml -f compose.dev.yml up
+# =============================================================================
+
+services:
+  api:
+    volumes:
+      # Mount only src/ for hot-reload — venv stays at /opt/venv (untouched)
+      - ../src:/app/src:delegated
+      - storage-data:/app/storage
+    environment:
+      - APP_ENV=development
+      - DEBUG=true
+      - PYTHONPATH=/app/src
+    command: uvicorn pdf_modifier.web.app:create_app --factory --host 0.0.0.0 --port 8000 --reload

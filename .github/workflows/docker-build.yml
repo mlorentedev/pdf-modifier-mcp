@@ -1,0 +1,151 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/compose*.yml"
+      - ".github/workflows/docker-build.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/compose*.yml"
+      - ".github/workflows/docker-build.yml"
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: docker.io
+  IMAGE_BACKEND: mlorentedev/pdf-modifier-api
+  IMAGE_FRONTEND: mlorentedev/pdf-modifier-web
+
+jobs:
+  build-backend:
+    name: Backend image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: |
+            ${{ env.IMAGE_BACKEND }}:latest
+            ${{ env.IMAGE_BACKEND }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify health (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run -d --name test-api -p 8000:8000 ${{ env.IMAGE_BACKEND }}:latest
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1
+          docker stop test-api && docker rm test-api
+
+  build-frontend:
+    name: Frontend image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.frontend
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: |
+            ${{ env.IMAGE_FRONTEND }}:latest
+            ${{ env.IMAGE_FRONTEND }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image exists (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          docker image inspect ${{ env.IMAGE_FRONTEND }}:latest || exit 1
+          echo "Frontend image built successfully"
+
+  compose:
+    name: Docker Compose up
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env
+        run: cp .env.example infra/.env
+
+      - name: Compose up
+        run: docker compose -f infra/compose.base.yml up -d --build
+
+      - name: Wait for services
+        run: |
+          sleep 15
+          docker compose -f infra/compose.base.yml ps
+
+      - name: Check health
+        run: |
+          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:8080/health || exit 1
+
+      - name: Compose down
+        if: always()
+        run: docker compose -f infra/compose.base.yml down -v

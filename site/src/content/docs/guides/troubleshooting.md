@@ -67,7 +67,7 @@ If the replacement text is significantly longer than the original, it may visual
 
 ### Subprocess mode
 
-If running the CLI via `python -m pdf_modifier_mcp.interfaces.cli`, Rich output (colors, tables) may not render in all terminals. Use the installed entry point `pdf-mod` instead.
+If running the CLI via `python -m pdf_modifier.interfaces.cli`, Rich output (colors, tables) may not render in all terminals. Use the installed entry point `pdf-mod` instead.
 
 ### JSON mode for scripting
 

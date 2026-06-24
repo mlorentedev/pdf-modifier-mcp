@@ -1,0 +1,92 @@
+[project]
+name = "pdf-modifier-mcp"
+version = "1.6.0"
+description = "PDF modification tool with CLI and MCP interfaces for AI agents."
+authors = [{name = "Manu", email = "mlorentedev@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+keywords = ["pdf", "mcp", "claude", "ai", "modification"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: General",
+]
+dependencies = [
+    "pymupdf>=1.26.7",
+    "typer[all]>=0.9.0",
+    "fastmcp>=0.4.1",
+    "pydantic>=2.0.0",
+    "httpx>=0.27.0",
+    "jinja2>=3.1.6",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-multipart>=0.0.9",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "pre-commit>=4.0.0",
+]
+
+[project.scripts]
+pdf-mod = "pdf_modifier.interfaces.cli:main"
+pdf-modifier-mcp = "pdf_modifier.interfaces.mcp:main"
+
+[project.urls]
+Homepage = "https://github.com/mlorentedev/pdf-modifier-mcp"
+Repository = "https://github.com/mlorentedev/pdf-modifier-mcp"
+Documentation = "https://mlorentedev.github.io/pdf-modifier-mcp/"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_modifier"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-v", "--cov-fail-under=80"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["fitz", "fastmcp.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pdf_modifier.interfaces.mcp", "tests.*"]
+disable_error_code = ["misc"]
+
+[[tool.mypy.overrides]]
+module = ["pdf_modifier.web.*", "tests.unit.web.*"]
+disable_error_code = ["arg-type", "misc", "no-any-return"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "A", "TCH"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/pdf_modifier/interfaces/cli.py" = ["TCH003"]
+"src/pdf_modifier/interfaces/mcp.py" = ["TCH003"]
+"src/pdf_modifier/web/**/*.py" = ["B008", "B904", "TC001", "TC003"]
+"tests/unit/web/**/*.py" = ["TC003", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pdf_modifier"]

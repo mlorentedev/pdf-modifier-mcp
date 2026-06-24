@@ -1,0 +1,71 @@
+# =============================================================================
+# .dockerignore — exclude non-essential files from Docker build context
+# =============================================================================
+
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+site/.astro/
+site/dist/
+site/node_modules/
+
+# Documentation (not needed in container)
+docs/
+
+# Spec files (dev artifacts)
+specs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (never ship secrets)
+.env
+.env.*
+*.env
+!.env.example
+
+# Docker files (not needed inside image)
+docker-compose*.yml
+*.dockerfile
+!Dockerfile
+
+# CI/CD
+.github/
+
+# Misc
+*.md.bak
+*.tmp

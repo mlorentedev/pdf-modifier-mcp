@@ -1,0 +1,9 @@
+node_modules/
+build/
+.svelte-kit/
+.vite/
+*.log
+frontend/.svelte-kit/
+frontend/build/
+frontend/static/pdf.worker.min.mjs
+frontend/static/pdf.worker.min.mjs
