@@ -58,11 +58,12 @@ jobs:
 
       - name: Run tests
         if: steps.check.outputs.exists == 'true'
+        working-directory: backend
         run: |
           uv python install ${{ matrix.python-version }}
           uv venv
           uv pip install -e ".[dev]"
-          make check
+          cd .. && make check
 
       - name: Report status on release PR
         if: always() && steps.check.outputs.exists == 'true'
@@ -92,10 +93,12 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv python install 3.12
       - run: uv build
+        working-directory: backend
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+          packages-dir: backend/dist/
 
   publish-mcp:
     needs: [release-please, publish]
@@ -114,7 +117,9 @@ jobs:
           curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
 
       - name: Authenticate to MCP Registry
-        run: ./mcp-publisher login github-oidc
+        working-directory: backend
+        run: ../mcp-publisher login github-oidc
 
       - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+        working-directory: backend
+        run: ../mcp-publisher publish
