@@ -7,6 +7,18 @@ from pathlib import Path
 from ..core.exceptions import PDFModifierError
 from ..logger import setup_logging
 
+
+def _validate_session_id(session_id: str) -> str:
+    """Validate session_id to prevent path traversal attacks."""
+    # Reject absolute paths and path traversal
+    if "/" in session_id or "\\" in session_id:
+        raise StorageError(f"Invalid session_id: {session_id}")
+    safe = Path(session_id).name
+    if safe != session_id:
+        raise StorageError(f"Invalid session_id: {session_id}")
+    return safe
+
+
 logger = setup_logging(__name__)
 
 PDF_MAGIC = b"%PDF"
@@ -60,7 +72,9 @@ class PDFStorage:
             )
 
         safe_name = self._sanitize_filename(filename)
-        session_dir = self._base_dir / session_id
+        # Validate session_id to prevent path traversal
+        session_id_safe = Path(session_id).name
+        session_dir = self._base_dir / session_id_safe
         session_dir.mkdir(parents=True, exist_ok=True)
         output_path = session_dir / safe_name
 
@@ -82,7 +96,8 @@ class PDFStorage:
         Raises:
             StorageError: If file not found.
         """
-        session_dir = self._base_dir / session_id
+        session_id_safe = Path(session_id).name
+        session_dir = self._base_dir / session_id_safe
         if not session_dir.exists():
             raise StorageError(f"Session directory not found: {session_id}")
 
@@ -101,7 +116,8 @@ class PDFStorage:
 
     def delete_session(self, session_id: str) -> None:
         """Delete all files for a session."""
-        session_dir = self._base_dir / session_id
+        session_id_safe = Path(session_id).name
+        session_dir = self._base_dir / session_id_safe
         if session_dir.exists():
             import shutil
 

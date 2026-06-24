@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import anyio
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
@@ -29,31 +30,42 @@ async def upload_pdf(
     session_mgr: SessionManager = Depends(get_session_manager),
 ) -> dict[str, str]:
     """Upload a PDF file and create a session."""
-    content = await file.read()
-
     from ..config import WebSettings
 
     max_size = WebSettings().max_file_size
-    if len(content) > max_size:
-        size_mb = len(content) / (1024 * 1024)
+
+    # Stream with size limit to avoid loading entire file into memory
+    content_chunks: list[bytes] = []
+    total_size = 0
+    while True:
+        chunk = await file.read(8192)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > max_size:
+            break
+        content_chunks.append(chunk)
+
+    if total_size > max_size:
+        size_mb = total_size / (1024 * 1024)
         limit_mb = max_size / (1024 * 1024)
         raise HTTPException(
             status_code=413,
             detail=f"File size {size_mb:.1f} MB exceeds limit of {limit_mb:.0f} MB",
         )
 
+    content = b"".join(content_chunks)
+
     # Validate PDF magic bytes
     if not content[:4] == b"%PDF":
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF")
-
-    safe_name = Path(file.filename or "upload.pdf").name
 
     session_id = session_mgr.create(Path("temp"))
 
     # Save directly to session directory
     session_dir = storage._base_dir / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = storage._sanitize_filename(safe_name)
+    safe_name = storage._sanitize_filename(file.filename or "upload.pdf")
     output_path = session_dir / safe_name
     output_path.write_bytes(content)
 
@@ -87,7 +99,7 @@ async def get_structure(
 
     try:
         analyzer = PDFAnalyzer(str(pdf_path))
-        result = analyzer.get_structure()
+        result = await anyio.to_thread.run_sync(analyzer.get_structure)
         session_mgr.update_structure(session_id, result.model_dump())
         return result.model_dump()
     except PDFModifierError as e:
@@ -133,15 +145,25 @@ async def replace_text(
         if pages:
             parts = pages.split("-")
             if len(parts) == 1:
-                page_range = (int(parts[0]), int(parts[0]))
+                try:
+                    page_range = (int(parts[0]), int(parts[0]))
+                except ValueError:
+                    raise HTTPException(status_code=400, detail=f"Invalid page format: {parts[0]}")
             elif len(parts) == 2:
-                page_range = (int(parts[0]), int(parts[1]))
+                try:
+                    page_range = (int(parts[0]), int(parts[1]))
+                except ValueError:
+                    raise HTTPException(
+                        status_code=400, detail=f"Invalid page format in range: {parts}"
+                    )
 
-        result = modifier.process(spec, pages=page_range)
+        result = await anyio.to_thread.run_sync(modifier.process, spec, page_range)
         session_mgr.set_modified_path(session_id, output_path)
         return result.model_dump()
     except PDFModifierError as e:
         raise HTTPException(status_code=400, detail=e.message)
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Error during PDF modification")
         raise HTTPException(status_code=500, detail="Modification failed")

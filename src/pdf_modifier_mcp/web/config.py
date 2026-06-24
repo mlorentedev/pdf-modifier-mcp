@@ -24,10 +24,12 @@ class WebSettings(BaseSettings):
     )
     max_file_size: int = Field(
         default=100 * 1024 * 1024,
+        gt=0,
         description="Maximum upload file size in bytes (default: 100 MB)",
     )
     session_ttl_seconds: int = Field(
         default=3600,
+        gt=0,
         description="Session TTL in seconds (default: 1 hour)",
     )
     log_level: str = Field(default="INFO", description="Logging level")

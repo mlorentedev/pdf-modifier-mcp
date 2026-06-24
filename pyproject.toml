@@ -73,7 +73,7 @@ disable_error_code = ["misc"]
 
 [[tool.mypy.overrides]]
 module = ["pdf_modifier_mcp.web.*", "tests.unit.web.*"]
-disable_error_code = ["arg-type", "misc"]
+disable_error_code = ["arg-type", "misc", "no-any-return"]
 
 [tool.ruff]
 line-length = 100

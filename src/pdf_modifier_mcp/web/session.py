@@ -121,6 +121,9 @@ class SessionManager:
         """List all active session IDs."""
         with self._lock:
             now = __import__("time").time()
+            # TTL <= 0 means no expiry (consistent with get() and cleanup_expired())
+            if self._ttl_seconds <= 0:
+                return list(self._sessions.keys())
             return [
                 sid for sid, s in self._sessions.items() if now - s.created_at <= self._ttl_seconds
             ]
