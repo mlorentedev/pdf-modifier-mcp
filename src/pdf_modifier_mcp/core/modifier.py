@@ -591,6 +591,7 @@ def batch_process(
     output_dir: str | Path,
     spec: ReplacementSpec,
     password: str | None = None,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
     custom_fonts: dict[str, str] | None = None,
 ) -> BatchResult:
     """
@@ -629,13 +630,15 @@ def batch_process(
                 str(file_path),
                 str(output_path),
                 password=password,
+                max_file_size=max_file_size,
                 custom_fonts=custom_fonts,
             )
             result = modifier.process(spec)
             results.append(result)
         except Exception as e:
             logger.warning("Batch: failed to process %s: %s", file_path, e)
-            errors.append({"file": str(file_path), "error": str(e)})
+            error_code = getattr(e, "code", "UNKNOWN")
+            errors.append({"file": str(file_path), "error": f"[{error_code}] {e}"})
 
     return BatchResult(
         total_files=len(file_paths),
