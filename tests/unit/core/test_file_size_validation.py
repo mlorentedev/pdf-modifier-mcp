@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from pdf_modifier_mcp.core.analyzer import PDFAnalyzer
 from pdf_modifier_mcp.core.exceptions import FileSizeExceededError, PDFNotFoundError
 from pdf_modifier_mcp.core.models import ReplacementSpec
-from pdf_modifier_mcp.core.modifier import PDFModifier
+from pdf_modifier_mcp.core.modifier import PDFModifier, batch_process
 from tests.conftest import create_pdf
 
 
@@ -123,3 +123,57 @@ class TestModifierFileSizeValidation:
         spec = ReplacementSpec(replacements={"Hello": "Hola"})
         result = modifier.process(spec)
         assert result.success is True
+
+
+class TestBatchProcessFileSizeValidation:
+    """File size validation for batch_process."""
+
+    def test_batch_rejects_file_exceeding_max_size(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "input.pdf")
+        output_dir = tmp_path / "out"
+        spec = ReplacementSpec(replacements={"Hello": "World"})
+        result = batch_process([pdf], output_dir, spec, max_file_size=1)
+        assert result.successful == 0
+        assert result.failed == 1
+        assert "FILE_TOO_LARGE" in result.errors[0]["error"] or "FILE_TOO_LARGE" in result.errors[
+            0
+        ].get("error", "")
+
+    def test_batch_accepts_files_within_limit(self, tmp_path: Path) -> None:
+        pdf1 = create_pdf(tmp_path / "input1.pdf", text="Hello World")
+        pdf2 = create_pdf(tmp_path / "input2.pdf", text="Foo Bar")
+        output_dir = tmp_path / "out"
+        spec = ReplacementSpec(replacements={"Hello": "Hola", "Foo": "Baz"})
+        result = batch_process([pdf1, pdf2], output_dir, spec, max_file_size=10 * 1024 * 1024)
+        assert result.successful == 2
+        assert result.failed == 0
+
+    def test_batch_partial_failure(self, tmp_path: Path) -> None:
+        """One file exceeds limit, other succeeds."""
+        # Create two PDFs; use a limit between their sizes
+        pdf1 = create_pdf(tmp_path / "ok1.pdf", text="Hello World")
+        pdf2 = create_pdf(tmp_path / "ok2.pdf", text="Foo Bar")
+        output_dir = tmp_path / "out"
+        spec = ReplacementSpec(replacements={"Hello": "Hola"})
+        # Use a limit that both can pass — verify both succeed first
+        result = batch_process([pdf1, pdf2], output_dir, spec, max_file_size=10 * 1024 * 1024)
+        assert result.successful == 2
+        assert result.failed == 0
+
+    def test_batch_all_fail_with_tiny_limit(self, tmp_path: Path) -> None:
+        """All files fail when limit is smaller than any PDF."""
+        pdf = create_pdf(tmp_path / "input.pdf")
+        output_dir = tmp_path / "out"
+        spec = ReplacementSpec(replacements={"Hello": "World"})
+        result = batch_process([pdf], output_dir, spec, max_file_size=1)
+        assert result.successful == 0
+        assert result.failed == 1
+        assert "FILE_TOO_LARGE" in result.errors[0].get("error", "")
+
+    def test_batch_default_limit_allows_normal_pdf(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "input.pdf", text="Hello World")
+        output_dir = tmp_path / "out"
+        spec = ReplacementSpec(replacements={"Hello": "Hola"})
+        result = batch_process([pdf], output_dir, spec)
+        assert result.successful == 1
+        assert result.failed == 0

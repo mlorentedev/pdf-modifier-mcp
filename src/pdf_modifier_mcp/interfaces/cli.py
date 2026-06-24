@@ -16,8 +16,18 @@ from rich.table import Table
 from ..core.analyzer import PDFAnalyzer
 from ..core.exceptions import PDFModifierError
 from ..core.models import ReplacementSpec
-from ..core.modifier import PDFModifier, batch_process
+from ..core.modifier import DEFAULT_MAX_FILE_SIZE_BYTES, PDFModifier, batch_process
 from ..logger import setup_logging
+
+
+def _get_max_file_size() -> int:
+    """Get max file size from env var, defaulting to 100 MB."""
+    import os
+
+    try:
+        return int(os.environ.get("PDF_MOD_MAX_FILE_SIZE", str(DEFAULT_MAX_FILE_SIZE_BYTES)))
+    except ValueError:
+        return DEFAULT_MAX_FILE_SIZE_BYTES
 
 
 def _parse_custom_fonts(ctx: Any, fonts: list[str] | None) -> dict[str, str] | None:
@@ -82,6 +92,13 @@ def modify(
             help="Custom font mapping. Format: 'alias=/path/to/font.ttf'. Repeatable.",
         ),
     ] = None,
+    max_size: Annotated[
+        int | None,
+        typer.Option(
+            "--max-size",
+            help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
+        ),
+    ] = None,
 ) -> None:
     """
     Modify a PDF by finding and replacing text while preserving font style.
@@ -127,10 +144,12 @@ def modify(
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
         cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
+        max_file_size = max_size or _get_max_file_size()
         modifier = PDFModifier(
             str(input_pdf.absolute()),
             str(output_pdf.absolute()),
             password=password,
+            max_file_size=max_file_size,
             custom_fonts=cf,
         )
 
@@ -192,6 +211,13 @@ def batch(
             help="Custom font mapping. Format: 'alias=/path/to/font.ttf'. Repeatable.",
         ),
     ] = None,
+    max_size: Annotated[
+        int | None,
+        typer.Option(
+            "--max-size",
+            help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
+        ),
+    ] = None,
 ) -> None:
     """
     Apply the same replacements to multiple PDF files.
@@ -218,6 +244,7 @@ def batch(
     try:
         spec = ReplacementSpec(replacements=replacements, use_regex=regex)
         cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
+        max_file_size = max_size or _get_max_file_size()
 
         with console.status("[bold green]Processing batch...", spinner="dots"):
             result = batch_process(
@@ -225,6 +252,7 @@ def batch(
                 output_dir,
                 spec,
                 password=password,
+                max_file_size=max_file_size,
                 custom_fonts=cf,
             )
 
@@ -270,14 +298,24 @@ def analyze(
         str | None,
         typer.Option("--password", "-p", help="Password if PDF is encrypted"),
     ] = None,
+    max_size: Annotated[
+        int | None,
+        typer.Option(
+            "--max-size",
+            help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
+        ),
+    ] = None,
 ) -> None:
     """
     Extract text or structure from a PDF.
 
     Use --json for machine-readable output with positions and fonts.
     """
+    max_file_size = max_size or _get_max_file_size()
     try:
-        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
+        analyzer = PDFAnalyzer(
+            str(input_pdf.absolute()), password=password, max_file_size=max_file_size
+        )
 
         if json_output:
             result = analyzer.get_structure()
@@ -303,14 +341,24 @@ def inspect(
         str | None,
         typer.Option("--password", "-p", help="Password if PDF is encrypted"),
     ] = None,
+    max_size: Annotated[
+        int | None,
+        typer.Option(
+            "--max-size",
+            help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
+        ),
+    ] = None,
 ) -> None:
     """
     Inspect font properties for specific terms in a PDF.
 
     Useful for understanding font styles before making replacements.
     """
+    max_file_size = max_size or _get_max_file_size()
     try:
-        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
+        analyzer = PDFAnalyzer(
+            str(input_pdf.absolute()), password=password, max_file_size=max_file_size
+        )
         result = analyzer.inspect_fonts(terms)
 
         if not result.matches:
@@ -353,12 +401,22 @@ def links(
         str | None,
         typer.Option("--password", "-p", help="Password if PDF is encrypted"),
     ] = None,
+    max_size: Annotated[
+        int | None,
+        typer.Option(
+            "--max-size",
+            help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
+        ),
+    ] = None,
 ) -> None:
     """
     List all hyperlinks found in a PDF document.
     """
+    max_file_size = max_size or _get_max_file_size()
     try:
-        analyzer = PDFAnalyzer(str(input_pdf.absolute()), password=password)
+        analyzer = PDFAnalyzer(
+            str(input_pdf.absolute()), password=password, max_file_size=max_file_size
+        )
         result = analyzer.get_hyperlinks()
 
         if not result.links:
