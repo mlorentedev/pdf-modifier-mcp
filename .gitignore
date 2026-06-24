@@ -35,6 +35,7 @@ storage/
 # PDFs (except test data)
 *.pdf
 !tests/data/*.pdf
+!backend/tests/data/*.pdf
 
 # Sensitive
 sensitive/
@@ -44,10 +45,11 @@ nul
 
 # Project Specific
 tests/examples_output/
+backend/tests/examples_output/
 !tests/data/sample.pdf
+!backend/tests/data/sample.pdf
 *.log
 .DS_Store
-data/
 
 # AI
 .claude/
