@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 PROMPTS_DIR = Path(__file__).parent
 
 
+@lru_cache(maxsize=1)
 def get_template_env() -> Environment:
     """Get a cached Jinja2 environment for prompt templates."""
     return Environment(

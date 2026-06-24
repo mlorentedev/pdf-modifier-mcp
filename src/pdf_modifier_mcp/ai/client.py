@@ -63,7 +63,6 @@ class NaNClient:
         model: str,
         messages: list[dict[str, str]],
         temperature: float = 0.0,
-        enable_thinking: bool = False,
         **extra_kwargs: Any,
     ) -> dict[str, Any]:
         """Send a chat completion request to NaN Cloud."""
@@ -73,7 +72,7 @@ class NaNClient:
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "chat_template_kwargs": {"enable_thinking": enable_thinking},
+            "chat_template_kwargs": {"enable_thinking": False},
             **extra_kwargs,
         }
 
@@ -101,7 +100,7 @@ class NaNClient:
                 raise
             except httpx.HTTPStatusError:
                 raise
-            except Exception as e:
+            except httpx.RequestError as e:
                 last_exception = e
                 logger.warning(
                     "AI chat attempt %d/%d failed for model=%s: %s",
@@ -124,7 +123,7 @@ class NaNClient:
         model: str,
         input_text: str | list[str],
     ) -> dict[str, Any]:
-        """Send an embedding request."""
+        """Send an embedding request with retry logic."""
         client = await self._get_client()
 
         payload = {
@@ -132,10 +131,47 @@ class NaNClient:
             "input": input_text,
         }
 
-        response = await client.post("/embeddings", json=payload)
-        response.raise_for_status()
-        data: dict[str, Any] = response.json()
-        return data
+        last_exception: Exception | None = None
+
+        for attempt in range(self._max_retries):
+            try:
+                response = await client.post("/embeddings", json=payload)
+
+                if response.status_code == 401:
+                    raise AIAuthenticationError("Invalid API key")
+                if response.status_code == 429:
+                    raise AIRateLimitError(
+                        f"Rate limit exceeded (attempt {attempt + 1}/{self._max_retries})"
+                    )
+                if response.status_code >= 500:
+                    raise AIServerError(f"Server error: {response.status_code}")
+                response.raise_for_status()
+
+                data: dict[str, Any] = response.json()
+                logger.debug("AI embed completed for model=%s", model)
+                return data
+
+            except (AIAuthenticationError, AIError):
+                raise
+            except httpx.HTTPStatusError:
+                raise
+            except httpx.RequestError as e:
+                last_exception = e
+                logger.warning(
+                    "AI embed attempt %d/%d failed for model=%s: %s",
+                    attempt + 1,
+                    self._max_retries,
+                    model,
+                    e,
+                )
+                if attempt < self._max_retries - 1:
+                    import asyncio
+
+                    await asyncio.sleep(2**attempt)
+
+        if last_exception:
+            raise last_exception
+        raise AIError("Embed request failed after retries")
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -218,7 +254,6 @@ class NullAIClient:
         model: str,
         messages: list[dict[str, str]],
         temperature: float = 0.0,
-        enable_thinking: bool = False,
         **extra_kwargs: Any,
     ) -> dict[str, Any]:
         self._call_count += 1
