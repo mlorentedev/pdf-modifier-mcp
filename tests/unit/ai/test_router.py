@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pdf_modifier_mcp.ai.router import ModelRouter, TaskType
+from pdf_modifier.ai.router import ModelRouter, TaskType
 
 
 class TestModelRouter:

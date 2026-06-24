@@ -16,7 +16,7 @@
 ## Architecture
 
 ```
-src/pdf_modifier_mcp/
+src/pdf_modifier/
 ├── core/                    # SIN CAMBIOS — reutilizar tal cual
 │   ├── modifier.py          # Text replacement engine (two-pass)
 │   ├── analyzer.py          # PDF parsing, structure, fonts, hyperlinks

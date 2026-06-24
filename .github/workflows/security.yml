@@ -1,0 +1,72 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Weekly scan on Monday mornings
+    - cron: "0 9 * * 1"
+
+jobs:
+  gitleaks:
+    name: Gitleaks (secrets scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pip-audit:
+    name: Pip audit (dependency vulnerabilities)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install deps
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
+      - name: Run pip-audit
+        run: |
+          uv pip freeze | pip-audit -n 10
+
+  bandit:
+    name: Bandit (Python security linter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install deps
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+          uv pip install bandit[toml]
+
+      - name: Run bandit
+        run: |
+          bandit -r src -ll --skip B101,B104 -f json -o bandit-report.json || true
+          cat bandit-report.json || echo "No issues found"

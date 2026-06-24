@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import fitz
 
-from pdf_modifier_mcp.interfaces.mcp import (
+from pdf_modifier.interfaces.mcp import (
     batch_modify_pdf_content,
     inspect_pdf_fonts,
     list_pdf_hyperlinks,

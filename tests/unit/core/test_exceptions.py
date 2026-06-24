@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pdf_modifier_mcp.core.exceptions import (
+from pdf_modifier.core.exceptions import (
     FileSizeExceededError,
     InvalidPatternError,
     PDFModifierError,

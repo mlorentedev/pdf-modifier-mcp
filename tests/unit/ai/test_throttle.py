@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from pdf_modifier_mcp.ai.throttle import Throttle
+from pdf_modifier.ai.throttle import Throttle
 
 
 class TestThrottle:

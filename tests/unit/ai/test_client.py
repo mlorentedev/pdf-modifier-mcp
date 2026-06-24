@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pdf_modifier_mcp.ai.client import NaNClient, NullAIClient
+from pdf_modifier.ai.client import NaNClient, NullAIClient
 
 
 class TestNullAIClient:

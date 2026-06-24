@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf_modifier_mcp.core.models import EmbeddedFontInfo, FontProperties
+from pdf_modifier.core.models import EmbeddedFontInfo, FontProperties
 
 
 class TestFontProperties:

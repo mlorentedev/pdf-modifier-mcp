@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pdf_modifier_mcp.web.config import WebSettings
-from pdf_modifier_mcp.web.session import SessionManager
+from pdf_modifier.web.config import WebSettings
+from pdf_modifier.web.session import SessionManager
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch

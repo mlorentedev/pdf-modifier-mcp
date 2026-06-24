@@ -10,7 +10,7 @@ tags: [core, fonts, custom-fonts]
 ## Phase 1: Foundation (FontResolver + Models)
 
 ### Task 1.1: FontProperties model
-- **File**: `src/pdf_modifier_mcp/core/models.py`
+- **File**: `src/pdf_modifier/core/models.py`
 - **Description**: Add `FontProperties` and `EmbeddedFontInfo` Pydantic models
 - **Acceptance**:
   - `FontProperties` has: fontname, fontfile (optional), is_bold, is_italic, is_serif, is_monospaced, embed
@@ -19,7 +19,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~30
 
 ### Task 1.2: FontResolver class
-- **File**: `src/pdf_modifier_mcp/core/font_resolver.py` (NEW)
+- **File**: `src/pdf_modifier/core/font_resolver.py` (NEW)
 - **Description**: Core font resolution logic with enhanced detection
 - **Acceptance**:
   - `resolve(font_name, font_flags=None, custom_fonts=None) -> FontProperties`
@@ -43,7 +43,7 @@ tags: [core, fonts, custom-fonts]
 ## Phase 2: Custom Font Integration
 
 ### Task 2.1: PDFModifier custom_fonts parameter
-- **File**: `src/pdf_modifier_mcp/core/modifier.py`
+- **File**: `src/pdf_modifier/core/modifier.py`
 - **Description**: Add `custom_fonts` parameter and integrate FontResolver
 - **Acceptance**:
   - `PDFModifier.__init__` accepts `custom_fonts: dict[str, str] | None = None`
@@ -65,7 +65,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~60
 
 ### Task 2.3: CLI integration for custom fonts
-- **File**: `src/pdf_modifier_mcp/interfaces/cli.py`
+- **File**: `src/pdf_modifier/interfaces/cli.py`
 - **Description**: Add `--custom-fonts` CLI argument
 - **Acceptance**:
   - `--custom-fonts KEY=PATH` (repeatable) argument
@@ -77,7 +77,7 @@ tags: [core, fonts, custom-fonts]
 ## Phase 3: Embedded Font Extraction
 
 ### Task 3.1: PDFAnalyzer.extract_embedded_fonts
-- **File**: `src/pdf_modifier_mcp/core/analyzer.py`
+- **File**: `src/pdf_modifier/core/analyzer.py`
 - **Description**: Add method to extract embedded font metadata and buffers
 - **Acceptance**:
   - `extract_embedded_fonts() -> list[EmbeddedFontInfo]`
@@ -98,7 +98,7 @@ tags: [core, fonts, custom-fonts]
 - **LOC**: ~40
 
 ### Task 3.3: MCP tool for font inspection
-- **File**: `src/pdf_modifier_mcp/interfaces/mcp.py`
+- **File**: `src/pdf_modifier/interfaces/mcp.py`
 - **Description**: Add `inspect_fonts` tool enhancement with embedded font info
 - **Acceptance**:
   - Existing `inspect_fonts` tool enhanced with embedded font metadata
@@ -109,7 +109,7 @@ tags: [core, fonts, custom-fonts]
 ## Phase 4: Documentation & Polish
 
 ### Task 4.1: Update models.py docstrings
-- **File**: `src/pdf_modifier_mcp/core/models.py`
+- **File**: `src/pdf_modifier/core/models.py`
 - **Description**: Add docstrings and examples for new models
 - **Acceptance**: All new models have docstrings with usage examples
 

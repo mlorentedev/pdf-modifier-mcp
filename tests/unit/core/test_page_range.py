@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 import fitz
 import pytest
 
-from pdf_modifier_mcp.core import PDFModifier
-from pdf_modifier_mcp.core.models import ReplacementSpec
+from pdf_modifier.core import PDFModifier
+from pdf_modifier.core.models import ReplacementSpec
 
 from ...conftest import create_pdf
 

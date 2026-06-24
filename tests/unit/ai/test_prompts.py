@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pdf_modifier_mcp.ai.prompts import render_prompt
+from pdf_modifier.ai.prompts import render_prompt
 
 
 class TestPromptRendering:

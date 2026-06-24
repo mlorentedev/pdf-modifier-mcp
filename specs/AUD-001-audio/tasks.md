@@ -18,7 +18,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ### T1.1: TTS Client
 - [ ] **RED:** Write `test_tts_returns_audio_bytes`
 - [ ] **RED:** Write `test_tts_uses_kokoro_model`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/audio.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/audio.py`
 - [ ] **GREEN:** Implement `text_to_speech(text, voice) → bytes`
 - [ ] **GREEN:** Use kokoro model
 - [ ] **GREEN:** Support Spanish voices (ef_dora, em_alex)

@@ -1,0 +1,39 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install deps
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+          uv pip install mutmut coveralls
+
+      - name: Run mutmut
+        run: |
+          mutmut run --paths-to-mutate=src --no-coverage --tests-dir tests --include-ignored
+
+      - name: Check mutation score
+        run: |
+          MUTATIONS=$(mutmut results 2>/dev/null | grep -c "survived" || echo 0)
+          if [ "$MUTATIONS" -gt 0 ]; then
+            echo "::warning::Found $MUTATIONS survived mutations — mutation score below threshold."
+            echo "Reproduce locally: mutmut results --no-of-tests=1"
+          fi

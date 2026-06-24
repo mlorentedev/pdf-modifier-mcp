@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 import fitz
 import pytest
 
-from pdf_modifier_mcp.core import PDFAnalyzer
-from pdf_modifier_mcp.core.exceptions import PDFNotFoundError, PDFPasswordError
-from pdf_modifier_mcp.core.models import FontInspectionResult, HyperlinkInventory, PDFStructure
+from pdf_modifier.core import PDFAnalyzer
+from pdf_modifier.core.exceptions import PDFNotFoundError, PDFPasswordError
+from pdf_modifier.core.models import FontInspectionResult, HyperlinkInventory, PDFStructure
 
 from ...conftest import SAMPLE_PDF, create_encrypted_pdf
 

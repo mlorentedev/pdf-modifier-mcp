@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 import pytest
 from typer.testing import CliRunner
 
-from pdf_modifier_mcp.interfaces.cli import app
+from pdf_modifier.interfaces.cli import app
 
 
 @pytest.fixture

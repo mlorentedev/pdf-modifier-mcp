@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 import pytest
 from typer.testing import CliRunner
 
-from pdf_modifier_mcp.interfaces.cli import app
-from pdf_modifier_mcp.interfaces.mcp import modify_pdf_content
+from pdf_modifier.interfaces.cli import app
+from pdf_modifier.interfaces.mcp import modify_pdf_content
 from tests.conftest import create_pdf
 
 if TYPE_CHECKING:
@@ -199,7 +199,7 @@ class TestMCPMaxFileSize:
         assert data["replacements_made"] > 0
 
     def test_batch_modify_rejects_large_file(self, tmp_path: Path) -> None:
-        from pdf_modifier_mcp.interfaces.mcp import batch_modify_pdf_content
+        from pdf_modifier.interfaces.mcp import batch_modify_pdf_content
 
         pdf = create_pdf(tmp_path / "input.pdf")
         output_dir = tmp_path / "out"
@@ -216,7 +216,7 @@ class TestMCPMaxFileSize:
         assert "FILE_TOO_LARGE" in data["errors"][0]["error"]
 
     def test_read_pdf_structure_rejects_large_file(self, tmp_path: Path) -> None:
-        from pdf_modifier_mcp.interfaces.mcp import read_pdf_structure
+        from pdf_modifier.interfaces.mcp import read_pdf_structure
 
         pdf = create_pdf(tmp_path / "input.pdf")
         result = read_pdf_structure(
@@ -230,7 +230,7 @@ class TestMCPMaxFileSize:
         assert data["error"] == "FILE_TOO_LARGE"
 
     def test_inspect_pdf_fonts_rejects_large_file(self, tmp_path: Path) -> None:
-        from pdf_modifier_mcp.interfaces.mcp import inspect_pdf_fonts
+        from pdf_modifier.interfaces.mcp import inspect_pdf_fonts
 
         pdf = create_pdf(tmp_path / "input.pdf")
         result = inspect_pdf_fonts(
@@ -245,7 +245,7 @@ class TestMCPMaxFileSize:
         assert data["error"] == "FILE_TOO_LARGE"
 
     def test_list_pdf_hyperlinks_rejects_large_file(self, tmp_path: Path) -> None:
-        from pdf_modifier_mcp.interfaces.mcp import list_pdf_hyperlinks
+        from pdf_modifier.interfaces.mcp import list_pdf_hyperlinks
 
         pdf = create_pdf(tmp_path / "input.pdf")
         result = list_pdf_hyperlinks(
@@ -259,7 +259,7 @@ class TestMCPMaxFileSize:
         assert data["error"] == "FILE_TOO_LARGE"
 
     def test_extract_embedded_fonts_rejects_large_file(self, tmp_path: Path) -> None:
-        from pdf_modifier_mcp.interfaces.mcp import extract_embedded_fonts
+        from pdf_modifier.interfaces.mcp import extract_embedded_fonts
 
         pdf = create_pdf(tmp_path / "input.pdf")
         result = extract_embedded_fonts(

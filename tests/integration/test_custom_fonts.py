@@ -8,8 +8,8 @@ from pathlib import Path
 import fitz
 import pytest
 
-from pdf_modifier_mcp.core.models import ReplacementSpec
-from pdf_modifier_mcp.core.modifier import PDFModifier
+from pdf_modifier.core.models import ReplacementSpec
+from pdf_modifier.core.modifier import PDFModifier
 
 # System font available on Windows (CI is Linux, so we skip font-embedding tests)
 _SYSTEM_FONT = None
@@ -82,7 +82,7 @@ class TestCustomFontIntegration:
         assert has_type0, f"Expected custom embedded font (Type0), got: {fonts}"
 
         # Step 6: Verify font extraction works
-        from pdf_modifier_mcp.core.analyzer import PDFAnalyzer
+        from pdf_modifier.core.analyzer import PDFAnalyzer
 
         analyzer = PDFAnalyzer(str(output))
         embedded = analyzer.extract_embedded_fonts()

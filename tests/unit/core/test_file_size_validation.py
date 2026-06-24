@@ -9,10 +9,10 @@ import pytest
 if TYPE_CHECKING:
     from pathlib import Path
 
-from pdf_modifier_mcp.core.analyzer import PDFAnalyzer
-from pdf_modifier_mcp.core.exceptions import FileSizeExceededError, PDFNotFoundError
-from pdf_modifier_mcp.core.models import ReplacementSpec
-from pdf_modifier_mcp.core.modifier import PDFModifier, batch_process
+from pdf_modifier.core.analyzer import PDFAnalyzer
+from pdf_modifier.core.exceptions import FileSizeExceededError, PDFNotFoundError
+from pdf_modifier.core.models import ReplacementSpec
+from pdf_modifier.core.modifier import PDFModifier, batch_process
 from tests.conftest import create_pdf
 
 

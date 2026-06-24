@@ -18,7 +18,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ### T1.1: Embedding Client
 - [ ] **RED:** Write `test_embedding_returns_vector`
 - [ ] **RED:** Write `test_embedding_batch_respects_limit`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/embedding.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/embedding.py`
 - [ ] **GREEN:** Implement `get_embedding(text) → list[float]`
 - [ ] **GREEN:** Implement `get_embeddings_batch(texts) → list[list[float]]`
 - [ ] **GREEN:** Use qwen3-embedding model

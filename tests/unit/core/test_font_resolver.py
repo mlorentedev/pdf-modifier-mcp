@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 import pytest
 
-from pdf_modifier_mcp.core.font_resolver import FontResolver
+from pdf_modifier.core.font_resolver import FontResolver
 
 
 class TestFontResolverResolve:

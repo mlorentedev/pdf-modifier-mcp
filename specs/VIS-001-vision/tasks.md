@@ -18,7 +18,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ### T1.1: PDF to Image Converter
 - [ ] **RED:** Write `test_convert_page_to_png_returns_bytes`
 - [ ] **RED:** Write `test_convert_page_respects_dpi`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/vision.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/vision.py`
 - [ ] **GREEN:** Implement `pdf_page_to_image(page_num, dpi=150) → bytes`
 - [ ] **GREEN:** Use fitz `page.get_pixmap()` for rendering
 - [ ] **REFACTOR:** Add quality options (DPI, format)

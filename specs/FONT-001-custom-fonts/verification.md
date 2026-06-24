@@ -13,20 +13,20 @@ tags: [core, fonts, custom-fonts, verification]
 
 ```bash
 # Run FontResolver tests
-pytest tests/unit/test_font_resolver.py -v --cov=src/pdf_modifier_mcp/core/font_resolver --cov-report=term-missing
+pytest tests/unit/test_font_resolver.py -v --cov=src/pdf_modifier/core/font_resolver --cov-report=term-missing
 
 # Run custom font tests
-pytest tests/unit/test_modifier_custom_fonts.py -v --cov=src/pdf_modifier_mcp/core/modifier --cov-report=term-missing
+pytest tests/unit/test_modifier_custom_fonts.py -v --cov=src/pdf_modifier/core/modifier --cov-report=term-missing
 
 # Run embedded font tests
-pytest tests/unit/test_analyzer_embedded_fonts.py -v --cov=src/pdf_modifier_mcp/core/analyzer --cov-report=term-missing
+pytest tests/unit/test_analyzer_embedded_fonts.py -v --cov=src/pdf_modifier/core/analyzer --cov-report=term-missing
 ```
 
 ### Mutation Testing
 
 ```bash
-mutmut run --paths-to-mutate=src/pdf_modifier_mcp/core/font_resolver.py
-mutmut run --paths-to-mutate=src/pdf_modifier_mcp/core/modifier.py
+mutmut run --paths-to-mutate=src/pdf_modifier/core/font_resolver.py
+mutmut run --paths-to-mutate=src/pdf_modifier/core/modifier.py
 ```
 
 ### Integration Test

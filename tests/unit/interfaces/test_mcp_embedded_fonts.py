@@ -9,7 +9,7 @@ from pathlib import Path
 import fitz
 import pytest
 
-from pdf_modifier_mcp.interfaces.mcp import (
+from pdf_modifier.interfaces.mcp import (
     extract_embedded_fonts,
     inspect_pdf_fonts,
 )
@@ -66,7 +66,7 @@ class TestExtractEmbeddedFonts:
         """extract_embedded_fonts is callable and registered."""
         # The tool is registered via @mcp.tool() decorator.
         # Verify it's callable by checking the function exists.
-        from pdf_modifier_mcp.interfaces.mcp import extract_embedded_fonts
+        from pdf_modifier.interfaces.mcp import extract_embedded_fonts
 
         assert callable(extract_embedded_fonts)
 

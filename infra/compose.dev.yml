@@ -1,0 +1,36 @@
+# =============================================================================
+# compose.dev.yml — development overrides (hot-reload, debug ports)
+# Usage: docker compose -f infra/compose.base.yml -f infra/compose.dev.yml up
+# =============================================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    # Override command for hot-reload (mount source, not built image)
+    command: uvicorn pdf_modifier.web.app:create_app --factory --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./src:/app/pdf_modifier:delegated
+      - storage-data:/app/storage
+    environment:
+      - DEBUG=true
+      - APP_ENV=development
+    # Expose debug port (attach debugger if needed)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  web:
+    # In dev, skip the pre-built image and run Astro dev server directly
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: builder
+    command: node --enable-source-maps node_modules/astro/bin/astro dev --host 0.0.0.0
+    volumes:
+      - ./site:/build:delegated
+    ports:
+      - "4321:4321"  # Astro dev server
+    depends_on:
+      - api

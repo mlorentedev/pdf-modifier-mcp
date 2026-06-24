@@ -8,9 +8,9 @@ from pathlib import Path
 import fitz
 import pytest
 
-from pdf_modifier_mcp.core.analyzer import PDFAnalyzer
-from pdf_modifier_mcp.core.exceptions import PDFNotFoundError
-from pdf_modifier_mcp.core.models import EmbeddedFontInfo
+from pdf_modifier.core.analyzer import PDFAnalyzer
+from pdf_modifier.core.exceptions import PDFNotFoundError
+from pdf_modifier.core.models import EmbeddedFontInfo
 
 # System font available on Windows (CI is Linux, so we skip font-embedding tests)
 _SYSTEM_FONT = None

@@ -107,7 +107,7 @@ Per `pattern-testing-standards`:
 ```toml
 # pyproject.toml
 [tool.mutmut]
-paths_to_mutate = ["src/pdf_modifier_mcp/"]
+paths_to_mutate = ["src/pdf_modifier/"]
 tests_dir = "tests/"
 runner = "python -m pytest"
 use_coverage = true

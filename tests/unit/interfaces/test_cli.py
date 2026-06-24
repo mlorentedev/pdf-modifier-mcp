@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import fitz
 from typer.testing import CliRunner
 
-from pdf_modifier_mcp.interfaces.cli import app
+from pdf_modifier.interfaces.cli import app
 
 from ...conftest import SAMPLE_PDF, create_pdf
 

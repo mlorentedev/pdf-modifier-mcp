@@ -17,14 +17,14 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 
 ### T1.1: FastAPI App Setup
 - [ ] **RED:** Write `test_health_endpoint_returns_200`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/app.py` with FastAPI app factory
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/routes/health.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/web/app.py` with FastAPI app factory
+- [ ] **GREEN:** Create `src/pdf_modifier/web/routes/health.py`
 - [ ] **GREEN:** Add health endpoint returning `{"status": "ok"}`
-- [ ] **REFACTOR:** Extract config to `src/pdf_modifier_mcp/web/config.py`
+- [ ] **REFACTOR:** Extract config to `src/pdf_modifier/web/config.py`
 
 ### T1.2: Configuration Management
 - [ ] **RED:** Write `test_config_loads_from_env`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/config.py` with Pydantic Settings
+- [ ] **GREEN:** Create `src/pdf_modifier/web/config.py` with Pydantic Settings
 - [ ] **GREEN:** Load `NAN_API_KEY`, `STORAGE_DIR`, `LOG_LEVEL`, `CORS_ORIGINS` from env
 - [ ] **REFACTOR:** Add `.env.example` with all variables
 
@@ -32,7 +32,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 - [ ] **RED:** Write `test_save_pdf_creates_file`
 - [ ] **RED:** Write `test_save_pdf_rejects_oversized_file`
 - [ ] **RED:** Write `test_sanitize_filename_strips_path_traversal`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/storage.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/web/storage.py`
 - [ ] **GREEN:** Implement `save_pdf(session_id, content, filename) → Path`
 - [ ] **GREEN:** Implement `get_pdf(session_id) → Path`
 - [ ] **GREEN:** Implement `delete_session(session_id)`
@@ -45,7 +45,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 - [ ] **RED:** Write `test_get_session_returns_data`
 - [ ] **RED:** Write `test_get_expired_session_returns_none`
 - [ ] **RED:** Write `test_cleanup_removes_expired_sessions`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/session.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/web/session.py`
 - [ ] **GREEN:** Implement `SessionManager` class with `create()`, `get()`, `delete()`
 - [ ] **GREEN:** Implement TTL-based expiration
 - [ ] **GREEN:** Implement background cleanup task
@@ -59,7 +59,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 - [ ] **RED:** Write `test_upload_pdf_returns_session_id`
 - [ ] **RED:** Write `test_upload_non_pdf_returns_400`
 - [ ] **RED:** Write `test_upload_oversized_returns_413`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/web/routes/pdf.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/web/routes/pdf.py`
 - [ ] **GREEN:** Implement `POST /api/pdf/upload` with file handling
 - [ ] **GREEN:** Validate PDF magic bytes
 - [ ] **GREEN:** Sanitize filename

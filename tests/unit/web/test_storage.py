@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf_modifier_mcp.web.storage import PDFStorage, StorageError
+from pdf_modifier.web.storage import PDFStorage, StorageError
 
 
 def _make_pdf_bytes() -> bytes:

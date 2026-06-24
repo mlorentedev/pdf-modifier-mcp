@@ -19,7 +19,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 - [ ] **RED:** Write `test_client_sends_enable_thinking_false`
 - [ ] **RED:** Write `test_client_adds_auth_header`
 - [ ] **RED:** Write `test_client_handles_429_with_retry`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/client.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/client.py`
 - [ ] **GREEN:** Implement `NaNClient` class with httpx async
 - [ ] **GREEN:** Add `enable_thinking: false` to every request
 - [ ] **GREEN:** Add retry with backoff on 429/5xx
@@ -29,7 +29,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 - [ ] **RED:** Write `test_router_returns_mimo_for_vision`
 - [ ] **RED:** Write `test_router_returns_qwen_for_translation`
 - [ ] **RED:** Write `test_router_override_takes_precedence`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/router.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/router.py`
 - [ ] **GREEN:** Implement `TaskType` enum
 - [ ] **GREEN:** Implement `ModelRouter.get_model(task_type) → str`
 - [ ] **GREEN:** Add config override via env var
@@ -38,7 +38,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ### T1.3: Throttle
 - [ ] **RED:** Write `test_throttle_limits_concurrency`
 - [ ] **RED:** Write `test_throttle_raises_on_limit`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/throttle.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/throttle.py`
 - [ ] **GREEN:** Implement `Throttle` class with asyncio.Semaphore
 - [ ] **GREEN:** Default concurrency: 3 (env-overridable)
 - [ ] **REFACTOR:** Add metrics/logging for throttle events
@@ -46,7 +46,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ### T1.4: Prompt Templates
 - [ ] **RED:** Write `test_render_detect_prompt_with_pdf_text`
 - [ ] **RED:** Write `test_render_classify_prompt_with_pdf_text`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/prompts/`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/prompts/`
 - [ ] **GREEN:** Create `detect_fields.j2` template
 - [ ] **GREEN:** Create `classify_doc.j2` template
 - [ ] **GREEN:** Create `redact_pii.j2` template
@@ -55,7 +55,7 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 
 ### T1.5: AI Models
 - [ ] **RED:** Write `test_detect_result_schema_validates`
-- [ ] **GREEN:** Create `src/pdf_modifier_mcp/ai/models.py`
+- [ ] **GREEN:** Create `src/pdf_modifier/ai/models.py`
 - [ ] **GREEN:** Implement `DetectResult`, `ClassifyResult`, `RedactResult` Pydantic models
 - [ ] **REFACTOR:** Add field descriptions and validators
 

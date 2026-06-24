@@ -8,8 +8,8 @@ from pathlib import Path
 import fitz
 import pytest
 
-from pdf_modifier_mcp.core.models import ReplacementSpec
-from pdf_modifier_mcp.core.modifier import PDFModifier
+from pdf_modifier.core.models import ReplacementSpec
+from pdf_modifier.core.modifier import PDFModifier
 
 # System font available on Windows (CI is Linux, so we skip font-embedding tests)
 _SYSTEM_FONT = None

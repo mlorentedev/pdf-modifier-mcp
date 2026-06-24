@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pdf_modifier_mcp.core.models import ReplacementSpec
-from pdf_modifier_mcp.core.modifier import batch_process
+from pdf_modifier.core.models import ReplacementSpec
+from pdf_modifier.core.modifier import batch_process
 
 from ...conftest import create_pdf
 

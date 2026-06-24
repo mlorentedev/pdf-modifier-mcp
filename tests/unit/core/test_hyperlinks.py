@@ -9,8 +9,8 @@ import fitz
 if TYPE_CHECKING:
     from pathlib import Path
 
-from pdf_modifier_mcp.core import PDFAnalyzer
-from pdf_modifier_mcp.core.models import HyperlinkInventory
+from pdf_modifier.core import PDFAnalyzer
+from pdf_modifier.core.models import HyperlinkInventory
 
 
 def test_get_hyperlinks(tmp_path: Path) -> None:

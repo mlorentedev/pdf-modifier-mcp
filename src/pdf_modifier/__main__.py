@@ -1,5 +1,5 @@
 """
-Entry point for `python -m pdf_modifier_mcp`.
+Entry point for `python -m pdf_modifier`.
 
 Launches the MCP server by default.
 Use `pdf-mod` command for CLI access.

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from pdf_modifier_mcp.ai.models import (
+from pdf_modifier.ai.models import (
     ClassificationAlternative,
     ClassifyResult,
     DetectField,

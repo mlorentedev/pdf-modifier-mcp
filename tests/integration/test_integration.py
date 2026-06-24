@@ -13,7 +13,7 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING
 
-from pdf_modifier_mcp.core import PDFAnalyzer, PDFModifier, ReplacementSpec
+from pdf_modifier.core import PDFAnalyzer, PDFModifier, ReplacementSpec
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -23,7 +23,7 @@ from ..conftest import EXAMPLES_OUTPUT_DIR, SAMPLE_PDF
 
 def run_cli(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     """Run CLI command via subprocess."""
-    cmd = [sys.executable, "-m", "pdf_modifier_mcp.interfaces.cli", *args]
+    cmd = [sys.executable, "-m", "pdf_modifier.interfaces.cli", *args]
     return subprocess.run(cmd, capture_output=True, text=True, check=check)
 
 

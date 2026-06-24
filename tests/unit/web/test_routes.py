@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from pdf_modifier_mcp.web.app import create_app
-from pdf_modifier_mcp.web.config import WebSettings
-from pdf_modifier_mcp.web.deps import reset_deps
+from pdf_modifier.web.app import create_app
+from pdf_modifier.web.config import WebSettings
+from pdf_modifier.web.deps import reset_deps
 from tests.conftest import create_pdf
 
 
@@ -28,7 +28,7 @@ class TestHealthEndpoint:
 
     def test_health_returns_ok(self, tmp_path: Path) -> None:
         # Pre-configure deps
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
@@ -46,7 +46,7 @@ class TestPDFUpload:
 
     @pytest.fixture
     def app(self, tmp_path: Path) -> object:
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
@@ -90,7 +90,7 @@ class TestPDFStructure:
 
     @pytest.fixture
     def app(self, tmp_path: Path) -> object:
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
@@ -125,7 +125,7 @@ class TestPDFReplace:
 
     @pytest.fixture
     def app(self, tmp_path: Path) -> object:
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
@@ -157,7 +157,7 @@ class TestPDFDownload:
 
     @pytest.fixture
     def app(self, tmp_path: Path) -> object:
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
@@ -199,7 +199,7 @@ class TestPDFDelete:
 
     @pytest.fixture
     def app(self, tmp_path: Path) -> object:
-        import pdf_modifier_mcp.web.deps as deps
+        import pdf_modifier.web.deps as deps
 
         deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
         deps._session_mgr = None
