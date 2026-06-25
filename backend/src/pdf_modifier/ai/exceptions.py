@@ -27,3 +27,9 @@ class AIServerError(AIError):
     """Raised when AI server returns an error."""
 
     code = "AI_SERVER_ERROR"
+
+
+class AIVisionError(AIError):
+    """Raised when vision operations fail (OCR, detection, comparison)."""
+
+    code = "AI_VISION_ERROR"

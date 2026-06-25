@@ -79,3 +79,66 @@ class EmbeddingQuery(BaseModel):
 
     model: str = Field(default="qwen3-embedding")
     input: str | list[str] = Field(..., description="Text or list of texts to embed")
+
+
+# --- Vision Models (VIS-001) ---
+
+
+class OCRPageResult(BaseModel):
+    """OCR result for a single page."""
+
+    page: int = Field(description="Page number (0-indexed)")
+    text: str = Field(description="Extracted text")
+    confidence: float = Field(ge=0.0, le=1.0, description="OCR confidence")
+    has_text_layer: bool = Field(description="Whether page had existing text layer")
+
+
+class OCRResult(BaseModel):
+    """Result of OCR extraction."""
+
+    success: bool = True
+    pages: list[OCRPageResult] = Field(default_factory=list)
+    total_pages: int = Field(description="Total pages processed")
+    model: str = Field(description="Model used for OCR")
+
+
+class SignaturePosition(BaseModel):
+    """Position of a detected signature."""
+
+    page: int = Field(description="Page number (0-indexed)")
+    bbox: tuple[float, float, float, float] = Field(description="Bounding box (x0, y0, x1, y1)")
+    confidence: float = Field(ge=0.0, le=1.0, description="Detection confidence")
+    signature_type: str = Field(
+        default="unknown",
+        description="Type: handwritten, digital, stamp",
+    )
+
+
+class SignatureDetectionResult(BaseModel):
+    """Result of signature detection."""
+
+    success: bool = True
+    signatures: list[SignaturePosition] = Field(default_factory=list)
+    total_found: int = Field(description="Total signatures found")
+    model: str = Field(description="Model used for detection")
+
+
+class PDFDifference(BaseModel):
+    """A single difference between two PDFs."""
+
+    page: int = Field(description="Page number (0-indexed)")
+    difference_type: str = Field(description="Type: text_change, added, removed, formatting")
+    description: str = Field(description="Human-readable description")
+    old_value: str | None = Field(default=None, description="Original value")
+    new_value: str | None = Field(default=None, description="New value")
+    bbox: tuple[float, float, float, float] | None = None
+
+
+class PDFComparisonResult(BaseModel):
+    """Result of PDF comparison."""
+
+    success: bool = True
+    differences: list[PDFDifference] = Field(default_factory=list)
+    total_differences: int = Field(description="Total differences found")
+    identical: bool = Field(description="Whether PDFs are identical")
+    model: str = Field(description="Model used for comparison")

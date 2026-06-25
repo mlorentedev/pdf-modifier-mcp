@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..logger import setup_logging
 from .config import WebSettings
-from .routes import ai_router, health_router, pdf_router
+from .routes import ai_router, health_router, pdf_router, vision_router
 
 logger = setup_logging(__name__)
 
@@ -64,6 +64,7 @@ def create_app(settings: WebSettings | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(pdf_router)
     app.include_router(ai_router)
+    app.include_router(vision_router)
 
     return app
 

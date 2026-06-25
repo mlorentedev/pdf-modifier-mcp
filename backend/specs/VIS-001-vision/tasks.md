@@ -16,46 +16,46 @@ For each task: RED (write failing test) → GREEN (implement) → REFACTOR (clea
 ## Phase 1: Image Conversion
 
 ### T1.1: PDF to Image Converter
-- [ ] **RED:** Write `test_convert_page_to_png_returns_bytes`
-- [ ] **RED:** Write `test_convert_page_respects_dpi`
-- [ ] **GREEN:** Create `src/pdf_modifier/ai/vision.py`
-- [ ] **GREEN:** Implement `pdf_page_to_image(page_num, dpi=150) → bytes`
-- [ ] **GREEN:** Use fitz `page.get_pixmap()` for rendering
-- [ ] **REFACTOR:** Add quality options (DPI, format)
+- [x] **RED:** Write `test_convert_page_to_png_returns_bytes`
+- [x] **RED:** Write `test_convert_page_respects_dpi`
+- [x] **GREEN:** Create `src/pdf_modifier/ai/vision.py`
+- [x] **GREEN:** Implement `pdf_page_to_image(page_num, dpi=150) → bytes`
+- [x] **GREEN:** Use fitz `page.get_pixmap()` for rendering
+- [x] **REFACTOR:** Add quality options (DPI, format)
 
 ### T1.2: Base64 Encoding
-- [ ] **RED:** Write `test_encode_image_base64_returns_data_uri`
-- [ ] **GREEN:** Implement `encode_image_base64(image_bytes) → str`
-- [ ] **GREEN:** Return data URI format for API input
-- [ ] **REFACTOR:** Handle different image formats
+- [x] **RED:** Write `test_encode_image_base64_returns_data_uri`
+- [x] **GREEN:** Implement `encode_image_base64(image_bytes) → str`
+- [x] **GREEN:** Return data URI format for API input
+- [x] **REFACTOR:** Handle different image formats
 
 ---
 
 ## Phase 2: Vision Endpoints
 
 ### T2.1: OCR Endpoint
-- [ ] **RED:** Write `test_ocr_scanned_pdf_returns_text`
-- [ ] **RED:** Write `test_ocr_with_text_layer_returns_error`
-- [ ] **GREEN:** Implement `POST /api/ai/{session_id}/ocr`
-- [ ] **GREEN:** Convert PDF pages to images
-- [ ] **GREEN:** Send images to mimo-v2.5 for OCR
-- [ ] **GREEN:** Return extracted text per page
-- [ ] **REFACTOR:** Handle multi-page PDFs in batches
+- [x] **RED:** Write `test_ocr_scanned_pdf_returns_text`
+- [x] **RED:** Write `test_ocr_with_text_layer_returns_error`
+- [x] **GREEN:** Implement `POST /api/ai/{session_id}/ocr`
+- [x] **GREEN:** Convert PDF pages to images
+- [x] **GREEN:** Send images to mimo-v2.5 for OCR
+- [x] **GREEN:** Return extracted text per page
+- [x] **REFACTOR:** Handle multi-page PDFs in batches
 
 ### T2.2: Signature Detection Endpoint
-- [ ] **RED:** Write `test_detect_signatures_returns_positions`
-- [ ] **GREEN:** Implement `POST /api/ai/{session_id}/detect-signatures`
-- [ ] **GREEN:** Send PDF images to mimo-v2.5
-- [ ] **GREEN:** Return signature positions and confidence
-- [ ] **REFACTOR:** Add bounding box coordinates
+- [x] **RED:** Write `test_detect_signatures_returns_positions`
+- [x] **GREEN:** Implement `POST /api/ai/{session_id}/detect-signatures`
+- [x] **GREEN:** Send PDF images to mimo-v2.5
+- [x] **GREEN:** Return signature positions and confidence
+- [x] **REFACTOR:** Add bounding box coordinates
 
 ### T2.3: PDF Comparison Endpoint
-- [ ] **RED:** Write `test_compare_pdfs_returns_differences`
-- [ ] **GREEN:** Implement `POST /api/ai/compare`
-- [ ] **GREEN:** Accept two session IDs
-- [ ] **GREEN:** Send both PDFs to mimo-v2.5
-- [ ] **GREEN:** Return list of differences
-- [ ] **REFACTOR:** Support side-by-side view
+- [x] **RED:** Write `test_compare_pdfs_returns_differences`
+- [x] **GREEN:** Implement `POST /api/ai/compare`
+- [x] **GREEN:** Accept two session IDs
+- [x] **GREEN:** Send both PDFs to mimo-v2.5
+- [x] **GREEN:** Return list of differences
+- [x] **REFACTOR:** Support side-by-side view
 
 ---
 
