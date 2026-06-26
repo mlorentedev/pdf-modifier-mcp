@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# safe-gh-pr — wrapper around gh pr create/edit that prevents secret leakage.
+#
+# ROOT CAUSE: backticks and $VAR inside double-quoted strings get expanded
+# by bash, dumping all environment secrets into the PR body on GitHub.
+#
+# This script:
+#   1. Accepts body via --body-file (preferred) or --body (safe if single-quoted by caller)
+#   2. Scans the final body text for common secret patterns before pushing
+#   3. Blocks the PR if secrets are detected
+#
+# Usage:
+#   scripts/safe-gh-pr create --title "feat: something" --body-file /tmp/pr-body.md
+#   scripts/safe-gh-pr create --title "feat: something" --body 'literal text only'
+#   scripts/safe-gh-pr edit 42 --body-file /tmp/pr-body.md
+#
+# Requirements: gh CLI authenticated, gitleaks (optional, for deeper scan).
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# --- Secret detection patterns ---
+SECRET_PATTERNS=(
+    # API keys (generic)
+    'sk-[a-zA-Z0-9]{20,}'                  # OpenAI, Stripe secret keys
+    'sk-proj-[a-zA-Z0-9_-]{20,}'           # OpenAI project keys
+    'sk-or-[a-zA-Z0-9_-]{20,}'             # OpenRouter
+    'sk-T[A-Za-z0-9_-]{20,}'               # NaN
+    'ghp_[a-zA-Z0-9]{30,}'                  # GitHub PAT
+    'gho_[a-zA-Z0-9]{30,}'                  # GitHub OAuth
+    'ghs_[a-zA-Z0-9]{30,}'                  # GitHub App token
+    'dckr_pat_[a-zA-Z0-9_-]{20,}'          # DockerHub PAT
+    'AIza[A-Za-z0-9_-]{35}'                # Google API key
+    'AKIA[0-9A-Z]{16}'                     # AWS access key
+    'xox[bpas]-[a-zA-Z0-9-]+'              # Slack token
+    'pypi-[a-zA-Z0-9_-]{50,}'              # PyPI token
+)
+
+scan_body() {
+    local body_text="$1"
+    local found=0
+
+    for pattern in "${SECRET_PATTERNS[@]}"; do
+        if echo "$body_text" | grep -qE "$pattern"; then
+            local match
+            match=$(echo "$body_text" | grep -oE "$pattern" | head -1)
+            # Mask the match for display
+            local masked="${match:0:6}...${match: -4}"
+            echo -e "${RED}BLOCKED: Secret pattern detected: ${masked}${NC}"
+            found=1
+        fi
+    done
+
+    # Check for environment variable expansion artifacts
+    if echo "$body_text" | grep -qE '[A-Z_]{3,}='; then
+        # Could be a false positive (e.g., in code examples), but warn
+        local env_matches
+        env_matches=$(echo "$body_text" | grep -oE '[A-Z_]{3,}=' | head -5)
+        echo -e "${YELLOW}WARNING: Possible env var names found: ${env_matches}${NC}"
+        echo -e "${YELLOW}If these are code examples, ignore this warning.${NC}"
+    fi
+
+    # Check for private keys separately (fixed string, no regex)
+    # gitleaks:allow:private-key - this is a detection pattern, not a real key
+    if echo "$body_text" | grep -qF -- '-----BEGIN PRIVATE KEY-----' || \
+       echo "$body_text" | grep -qF -- '-----BEGIN RSA PRIVATE KEY-----' || \
+       echo "$body_text" | grep -qF -- '-----BEGIN EC PRIVATE KEY-----'; then
+        echo -e "${RED}BLOCKED: Private key detected${NC}"
+        found=1
+    fi
+
+    return $found
+}
+
+# --- Main ---
+ACTION="${1:-}"
+shift || true
+
+case "$ACTION" in
+    create|edit)
+        ;;
+    *)
+        echo "Usage: $0 {create|edit} [gh pr flags...]"
+        echo ""
+        echo "Examples:"
+        echo "  $0 create --title 'feat: foo' --body-file /tmp/pr-body.md"
+        echo "  $0 create --title 'feat: foo' --body 'Safe literal text'"
+        echo "  $0 edit 42 --body-file /tmp/pr-body.md"
+        exit 1
+        ;;
+esac
+
+# Parse arguments to find body content
+BODY_FILE=""
+BODY_TEXT=""
+ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --body-file)
+            BODY_FILE="$2"
+            shift 2
+            ;;
+        --body)
+            BODY_TEXT="$2"
+            shift 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Resolve body content
+if [[ -n "$BODY_FILE" ]]; then
+    if [[ ! -f "$BODY_FILE" ]]; then
+        echo -e "${RED}ERROR: Body file not found: $BODY_FILE${NC}"
+        exit 1
+    fi
+    BODY_CONTENT=$(cat "$BODY_FILE")
+elif [[ -n "$BODY_TEXT" ]]; then
+    BODY_CONTENT="$BODY_TEXT"
+else
+    echo -e "${RED}ERROR: Must provide --body-file or --body${NC}"
+    exit 1
+fi
+
+# Scan for secrets
+echo -e "${GREEN}Scanning PR body for secrets...${NC}"
+if ! scan_body "$BODY_CONTENT"; then
+    echo -e "${RED}========================================${NC}"
+    echo -e "${RED}PR BLOCKED: Secrets detected in body.${NC}"
+    echo -e "${RED}Fix the body and try again.${NC}"
+    echo -e "${RED}========================================${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}No secrets detected. Creating PR...${NC}"
+
+# Build the gh command
+if [[ "$ACTION" == "create" ]]; then
+    gh pr create "${ARGS[@]}" --body "$BODY_CONTENT"
+else
+    gh pr edit "${ARGS[@]}" --body "$BODY_CONTENT"
+fi

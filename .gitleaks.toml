@@ -1,0 +1,9 @@
+# Gitleaks configuration
+# Allowlist specific files/patterns that are false positives
+
+[allowlist]
+  description = "Allowlist for false positives"
+  paths = [
+    # safe-gh-pr contains detection patterns (not real secrets)
+    "scripts/safe-gh-pr",
+  ]

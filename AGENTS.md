@@ -122,6 +122,7 @@ Fallback on: 429, 404, 5xx. Fail fast on: 400, 401.
 - Upload validation: PDF magic bytes, filename sanitization, max size
 - CORS configured via env var
 - Security headers on all responses
+- **NEVER use double quotes or backticks in PR/commit bodies passed to `gh`.** Bash expands `$VAR` and `` `cmd` `` inside double-quoted strings, leaking environment secrets into GitHub. Always use single-quoted strings or write the body to a file with `<< 'HEREDOC_END'` (quoted delimiter prevents expansion). Use `scripts/safe-gh-pr` for all PR creation.
 
 ## Patterns Applied
 
