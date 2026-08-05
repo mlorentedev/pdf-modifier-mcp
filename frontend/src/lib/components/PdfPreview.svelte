@@ -12,6 +12,14 @@
 	let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let scale = $state(1.5);
+	let pageInput = $state('1');
+	let rendering = $state(false);
+	let renderToken = 0;
+
+	const MIN_SCALE = 0.25;
+	const MAX_SCALE = 4;
+	const ZOOM_STEP = 1.25;
 
 	onMount(async () => {
 		try {
@@ -19,6 +27,7 @@
 			const loadingTask = pdfjsLib.getDocument(url);
 			pdfDoc = await loadingTask.promise;
 			totalPages = pdfDoc.numPages;
+			pageInput = String(currentPage);
 			await renderPage(currentPage);
 			loading = false;
 		} catch (e) {
@@ -30,9 +39,11 @@
 	async function renderPage(pageNum: number) {
 		if (!pdfDoc || !canvas) return;
 
+		const token = ++renderToken;
+		rendering = true;
+
 		try {
 			const page = await pdfDoc.getPage(pageNum);
-			const scale = 1.5;
 			const viewport = page.getViewport({ scale });
 
 			const context = canvas.getContext('2d');
@@ -45,14 +56,66 @@
 				canvasContext: context,
 				viewport
 			}).promise;
+
+			// If a newer render was requested meanwhile, don't overlay stale highlights
+			if (token !== renderToken) return;
+			await drawHighlights(page, viewport);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to render page';
+		} finally {
+			if (token === renderToken) rendering = false;
 		}
+	}
+
+	async function drawHighlights(page: pdfjsLib.PDFPageProxy, viewport: pdfjsLib.PageViewport) {
+		const term = highlightText.trim();
+		if (!term) return;
+
+		const textContent = await page.getTextContent();
+		const context = canvas.getContext('2d');
+		if (!context) return;
+
+		const termLower = term.toLowerCase();
+		for (const item of textContent.items) {
+			if (!('str' in item)) continue;
+			const str = item.str.toLowerCase();
+			if (!str.includes(termLower)) continue;
+
+			const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+			// Approximate text width from item width in unscaled coords
+			const unscaledViewport = page.getViewport({ scale: 1 });
+			const width = viewport.width * (item.width! / unscaledViewport.width);
+			const height = Math.abs(tx[3]) || 10;
+			const x = tx[4];
+			const y = tx[5] - height;
+
+			context.fillStyle = 'rgba(255, 235, 59, 0.35)';
+			context.fillRect(x, y, width, height);
+		}
+	}
+
+	function zoom(dir: 1 | -1) {
+		const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (dir > 0 ? ZOOM_STEP : 1 / ZOOM_STEP)));
+		if (next === scale) return;
+		scale = next;
+		renderPage(currentPage);
+	}
+
+	function fitToWidth() {
+		const container = document.querySelector('.pdf-scroll');
+		if (!container || !pdfDoc) return;
+		const cw = container.clientWidth - 24;
+		pdfDoc.getPage(currentPage).then(page => {
+			const base = page.getViewport({ scale: 1 });
+			scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cw / base.width));
+			renderPage(currentPage);
+		});
 	}
 
 	function prevPage() {
 		if (currentPage > 1) {
 			currentPage--;
+			pageInput = String(currentPage);
 			renderPage(currentPage);
 		}
 	}
@@ -60,8 +123,19 @@
 	function nextPage() {
 		if (currentPage < totalPages) {
 			currentPage++;
+			pageInput = String(currentPage);
 			renderPage(currentPage);
 		}
+	}
+
+	function jumpToPage() {
+		const n = parseInt(pageInput, 10);
+		if (isNaN(n) || n < 1 || n > totalPages) {
+			pageInput = String(currentPage);
+			return;
+		}
+		currentPage = n;
+		renderPage(currentPage);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -83,25 +157,54 @@
 	{:else if error}
 		<div class="p-4 bg-red-900/50 rounded text-red-400">{error}</div>
 	{:else}
+		<!-- Toolbar: page nav, zoom, page jump -->
 		<div class="flex items-center justify-between mb-4">
-			<button
-				onclick={prevPage}
-				disabled={currentPage <= 1}
-				class="px-3 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600"
-			>
-				← Prev
-			</button>
-			<span class="text-gray-400">Page {currentPage} / {totalPages}</span>
-			<button
-				onclick={nextPage}
-				disabled={currentPage >= totalPages}
-				class="px-3 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600"
-			>
-				Next →
-			</button>
+			<div class="flex items-center gap-2">
+				<button
+					onclick={prevPage}
+					disabled={currentPage <= 1 || rendering}
+					class="px-3 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
+				>←</button>
+				<span class="text-gray-400 text-sm">
+					Page
+					<input
+						type="number"
+						min="1" max={totalPages}
+						bind:value={pageInput}
+						onchange={jumpToPage}
+						class="w-12 bg-gray-700 rounded px-2 py-1 text-sm text-center"
+					/>
+					/ {totalPages}
+				</span>
+				<button
+					onclick={nextPage}
+					disabled={currentPage >= totalPages || rendering}
+					class="px-3 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
+				>→</button>
+			</div>
+			<div class="flex items-center gap-1">
+				<button
+					onclick={() => zoom(-1)}
+					disabled={scale <= MIN_SCALE || rendering}
+					class="px-2 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
+					title="Zoom out"
+				>🔍−</button>
+				<span class="text-gray-400 text-xs w-12 text-center">{Math.round(scale * 100)}%</span>
+				<button
+					onclick={() => zoom(1)}
+					disabled={scale >= MAX_SCALE || rendering}
+					class="px-2 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
+					title="Zoom in"
+				>🔍+</button>
+				<button
+					onclick={fitToWidth}
+					class="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 text-xs ml-1"
+					title="Fit to width"
+				>Fit</button>
+			</div>
 		</div>
 
-		<div class="overflow-auto max-h-[600px] flex justify-center bg-gray-950 rounded p-2">
+		<div class="overflow-auto max-h-[600px] flex justify-center bg-gray-950 rounded p-2 pdf-scroll">
 			<canvas bind:this={canvas} class="border border-gray-600"></canvas>
 		</div>
 
