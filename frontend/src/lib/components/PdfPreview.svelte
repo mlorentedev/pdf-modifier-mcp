@@ -40,6 +40,13 @@
 		}
 	});
 
+	// Re-render (with highlights) whenever the highlight term changes.
+	$effect(() => {
+		const term = highlightText;
+		if (!pdfDoc || !canvas || !term.trim()) return;
+		renderPage(currentPage);
+	});
+
 	async function renderPage(pageNum: number) {
 		if (!pdfDoc || !canvas) return;
 
@@ -64,7 +71,9 @@
 			// If a newer render was requested meanwhile, don't overlay stale highlights
 			if (token !== renderToken) return;
 			// Highlights are best-effort; never let a failure blank the rendered page
-			drawHighlights(page, viewport).catch(() => {});
+			drawHighlights(page, viewport).catch((e: unknown) => {
+				console.error('PDF highlight error:', e);
+			});
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to render page';
 		} finally {
