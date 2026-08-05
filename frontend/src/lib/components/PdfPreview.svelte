@@ -23,8 +23,9 @@
 
 	onMount(async () => {
 		try {
-			const url = `/api/pdf/${sessionId}/download`;
-			const loadingTask = pdfjsLib.getDocument(url);
+			const response = await fetch(`/api/pdf/${sessionId}/download`);
+			const buffer = await response.arrayBuffer();
+			const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
 			pdfDoc = await loadingTask.promise;
 			totalPages = pdfDoc.numPages;
 			pageInput = String(currentPage);
