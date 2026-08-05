@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import * as pdfjsLib from 'pdfjs-dist';
 
 	pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -29,8 +29,10 @@
 			pdfDoc = await loadingTask.promise;
 			totalPages = pdfDoc.numPages;
 			pageInput = String(currentPage);
-			await renderPage(currentPage);
 			loading = false;
+			// Wait for DOM to update (canvas appears after loading=false)
+			await tick();
+			renderPage(currentPage);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load PDF';
 			loading = false;
@@ -60,7 +62,8 @@
 
 			// If a newer render was requested meanwhile, don't overlay stale highlights
 			if (token !== renderToken) return;
-			await drawHighlights(page, viewport);
+			// Highlights are best-effort; never let a failure blank the rendered page
+			drawHighlights(page, viewport).catch(() => {});
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to render page';
 		} finally {
