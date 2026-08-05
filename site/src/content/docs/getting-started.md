@@ -185,6 +185,33 @@ All tools return structured JSON. Errors include a typed error code (`FILE_NOT_F
 2. Call `inspect_pdf_fonts` with the target terms to confirm font properties.
 3. Call `modify_pdf_content` with the replacement map.
 
+## Web UI
+
+The project includes a browser-based interface (FastAPI + SvelteKit) for interactive editing.
+
+### With Docker (recommended)
+
+```bash
+make up
+# API: http://localhost:8000 | Web UI: http://localhost:8080
+```
+
+Upload a PDF by drag & drop (or click to select), browse the detected structure in the
+sidebar, preview pages with zoom and page jump, and click an element to highlight it on
+the canvas before applying replacements.
+
+### Without Docker
+
+```bash
+# Terminal 1 — backend API
+make run api
+
+# Terminal 2 — frontend dev server (http://localhost:5173)
+make run frontend
+```
+
+The Vite dev server proxies `/api` to the backend on port 8000.
+
 ## How it works
 
 1. The PDF is opened with PyMuPDF and each page is scanned for text spans matching the target.
