@@ -53,6 +53,12 @@ owner: manu
 - El error de `pip install .` sin pyproject.toml es **visible en build**, no silencioso: `ERROR: Directory '.' is not installable. Neither 'setup.py' nor 'pyproject.toml' found.`
 **Tags:** `#docker` `#multi-stage` `#venv` `#windows-wsl` `#python`
 
+### [2026-08-04] Canvas render must run after DOM mount in Svelte {#if}
+**Context:** Rendering a PDF to a `<canvas>` inside a Svelte `{#if loading}` block.
+**Problem:** `renderPage()` called in `onMount` silently no-oped — the canvas was wrapped in `{#if loading}`, so it wasn't in the DOM yet and `canvas` was `null`. Result: black screen, no error.
+**Solution:** Set `loading = false` first, `await tick()` to let Svelte flush the DOM, then call `renderPage()`. Also: reactive prop changes (e.g. `highlightText`) need a `$effect` to trigger re-render — calling once in `onMount` isn't enough.
+**Tags:** `#frontend` `#svelte` `#canvas` `#lifecycle`
+
 ### [2026-03-14] Worktree agents lose staged changes when main repo branch operations interfere
 **Context:** Running two parallel agents in git worktrees while also creating branches in the main repo
 **Problem:** When I created a branch in the main repo with the same name the worktree agent was going to use, the worktree's staged changes were lost. Git worktrees share the same repository, so branch operations in one worktree can affect others.

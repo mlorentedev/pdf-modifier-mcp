@@ -228,6 +228,7 @@
 			class:bg-gray-800={!dragOver}
 			class:bg-gray-700={dragOver}
 			ondrop={handleDrop} ondragover={handleDragOver} ondragleave={handleDragLeave}
+			onclick={() => document.getElementById('file-input')?.click()}
 		>
 			{#if uploading}
 				<div class="flex flex-col items-center gap-3">
@@ -237,7 +238,7 @@
 			{:else}
 				<p class="text-xl text-gray-400 mb-2">Drag & drop a PDF here</p>
 				<p class="text-gray-500">or click to select (max 100MB)</p>
-				<input type="file" accept=".pdf" class="hidden" onchange={handleFileSelect} />
+				<input id="file-input" type="file" accept=".pdf" class="hidden" onchange={handleFileSelect} />
 			{/if}
 		</div>
 	{:else}

@@ -50,6 +50,7 @@ Replacing text in a PDF should not require Adobe Acrobat, a SaaS subscription, o
 Two interfaces, same engine:
 - **CLI** (`pdf-mod`) — for batch jobs, scripting, and CI pipelines.
 - **MCP Server** (`pdf-modifier-mcp`) — so Claude Desktop, Cursor, or any MCP client can edit PDFs autonomously.
+- **Web UI** — FastAPI + SvelteKit for interactive editing in the browser.
 
 Install and run in one line:
 
@@ -60,6 +61,10 @@ pip install pdf-modifier-mcp
 ## Features
 
 <CardGrid>
+  <Card title="Web UI" icon="website">
+    FastAPI + SvelteKit interface. Drag & drop a PDF, browse structure, preview pages with
+    zoom and page jump, and highlight target text before replacing. Runs locally via Docker.
+  </Card>
   <Card title="MCP Server" icon="puzzle">
     Four tools for AI agents: `read_pdf_structure`, `inspect_pdf_fonts`, `modify_pdf_content`, `list_pdf_hyperlinks`.
     Works with Claude Desktop, Cursor, and any MCP-compatible client.

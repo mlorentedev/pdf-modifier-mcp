@@ -6,20 +6,22 @@ description: Technical architecture of pdf-modifier-mcp — layers, data flow, a
 ## Overview
 
 ```
-Entry Points               Core Layer                  Engine
-+-----------------------+   +-----------------------+   +----------------+
-| CLI (Typer + Rich)    |-->| PDFModifier           |-->| PyMuPDF (fitz) |
-| MCP Server (FastMCP)  |   | PDFAnalyzer           |   +----------------+
-+-----------------------+   | Pydantic v2 models    |
-                            +-----------------------+
+Entry Points               Core Layer         Engine              Web Layer
++-----------------------+   +---------------+   +-------------+   +-------------------+
+| CLI (Typer + Rich)    |-->|               |   |             |   | FastAPI (backend)  |
+| MCP Server (FastMCP)  |-->| PDFModifier   |-->| PyMuPDF     |   | SvelteKit (front)  |
+| Web UI (browser)      |-->| PDFAnalyzer   |   | (fitz)      |   | nginx (proxy)      |
++-----------------------+   | Pydantic v2   |   +-------------+   +-------------------+
+                            +---------------+
 ```
 
-The project follows a clean architecture with two layers:
+The project follows a clean architecture with three layers:
 
-- **Interface layer** — thin wrappers that handle I/O format (CLI output, JSON-RPC responses)
+- **Interface layer** — thin wrappers that handle I/O format (CLI output, JSON-RPC responses, HTTP API)
 - **Core layer** — pure business logic with typed inputs and outputs
+- **Web layer** — FastAPI REST API + SvelteKit frontend served behind nginx
 
-Both interfaces share the same core. Adding a new interface (e.g., HTTP API) requires only a new file in `interfaces/` with no core changes.
+All interfaces share the same core. Adding a new interface requires only a new file with no core changes.
 
 ## Core layer
 
