@@ -32,7 +32,7 @@ jobs:
       # PRs: use github-script with GraphQL (gh project CLI fails with
       # 'unknown owner type' under fine-grained PATs — see bitacora-status.yml).
       - name: Add PR to project
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.BITACORA_PAT }}
