@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import * as pdfjsLib from 'pdfjs-dist';
+	import { getHighlightRects, type HighlightViewport } from '$lib/utils/highlight';
 
 	pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
@@ -79,22 +80,15 @@
 		const context = canvas.getContext('2d');
 		if (!context) return;
 
-		const termLower = term.toLowerCase();
-		for (const item of textContent.items) {
-			if (!('str' in item)) continue;
-			const str = item.str.toLowerCase();
-			if (!str.includes(termLower)) continue;
+		const textItems = textContent.items.filter(
+			(i): i is { str: string; transform: number[]; width: number; height: number } => 'str' in i
+		);
+		const vp: HighlightViewport = { scale: viewport.scale, transform: viewport.transform };
+		const rects = getHighlightRects(term, textItems, vp);
 
-			const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-			// Approximate text width from item width in unscaled coords
-			const unscaledViewport = page.getViewport({ scale: 1 });
-			const width = viewport.width * (item.width! / unscaledViewport.width);
-			const height = Math.abs(tx[3]) || 10;
-			const x = tx[4];
-			const y = tx[5] - height;
-
-			context.fillStyle = 'rgba(255, 235, 59, 0.35)';
-			context.fillRect(x, y, width, height);
+		context.fillStyle = 'rgba(255, 235, 59, 0.35)';
+		for (const r of rects) {
+			context.fillRect(r.x, r.y, r.width, r.height);
 		}
 	}
 
@@ -209,7 +203,11 @@
 		</div>
 
 		<div class="overflow-auto max-h-[600px] flex justify-center bg-gray-950 rounded p-2 pdf-scroll">
-			<canvas bind:this={canvas} class="border border-gray-600"></canvas>
+			<canvas
+				bind:this={canvas}
+				class="border border-gray-600 max-w-full h-auto"
+				style="max-width:100%;"
+			></canvas>
 		</div>
 
 		{#if highlightText}
