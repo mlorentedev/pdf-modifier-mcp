@@ -18,7 +18,7 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 
 - Test suite: `npx vitest run` -> **4 files passed, 35 tests passed** (grouping 10, scroll 6, highlight 13, client 6)
 - Type check: `npm run check` -> **0 errors, 2 warnings** (both warnings pre-existing in master: `canvas` not `$state`, dropzone keyboard handler)
-- Manual smoke test: pending — **user-in-the-loop validation on the running Docker stack before PR merge** (sidebar grouping on a real multi-line/two-column PDF, click-to-locate navigation+scroll, highlight precision at multiple zoom levels)
+- Manual smoke test: user validated the app on the running Docker stack (grouping + click-to-locate + highlight OK); Playwright e2e (5 tests) covers upload, grouping, locate, highlight, undo/redo — PR #121
 - No regressions in existing test suite: yes (all 35 pass; backend untouched)
 
 ## Decisions made during implementation
