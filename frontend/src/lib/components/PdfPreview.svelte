@@ -3,6 +3,7 @@
 	import * as pdfjsLib from 'pdfjs-dist';
 	import { getHighlightRects, type HighlightViewport, type HighlightTextItem } from '$lib/utils/highlight';
 	import { computeScrollTarget, type Rect } from '$lib/utils/scroll';
+	import { computeMaxScale } from '$lib/utils/zoom';
 	import type { FocusTarget } from '$lib/utils/grouping';
 
 	pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -27,7 +28,20 @@
 	let renderPromise: Promise<void> | null = null;
 
 	const MIN_SCALE = 0.25;
-	const MAX_SCALE = 4;
+	const MAX_SCALE = 4; // hard cap; dynamic ceiling computed per screen
+
+	// Dynamic zoom ceiling: the scale at which one canvas pixel equals one
+	// physical screen pixel. Beyond it the browser downscales an oversized
+	// canvas, producing blurry/distorted text.
+	function maxScale(): number {
+		if (!pdfDoc || !canvas || !canvas.width) return MAX_SCALE;
+		const pageWidth = canvas.width / scale; // page width at scale 1 (px)
+		return computeMaxScale({
+			pageWidth,
+			screenWidth: window.screen.width,
+			devicePixelRatio: window.devicePixelRatio || 1
+		});
+	}
 	const ZOOM_STEP = 1.25;
 
 	onMount(async () => {
@@ -193,7 +207,8 @@
 	}
 
 	function zoom(dir: 1 | -1) {
-		const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (dir > 0 ? ZOOM_STEP : 1 / ZOOM_STEP)));
+		const limit = maxScale();
+		const next = Math.min(limit, Math.max(MIN_SCALE, scale * (dir > 0 ? ZOOM_STEP : 1 / ZOOM_STEP)));
 		if (next === scale) return;
 		scale = next;
 		renderPage(currentPage);
@@ -205,7 +220,7 @@
 		const cw = container.clientWidth - 24;
 		pdfDoc.getPage(currentPage).then(page => {
 			const base = page.getViewport({ scale: 1 });
-			scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cw / base.width));
+			scale = Math.max(MIN_SCALE, Math.min(maxScale(), cw / base.width));
 			renderPage(currentPage);
 		});
 	}
@@ -290,7 +305,7 @@
 				<span class="text-gray-400 text-xs w-12 text-center">{Math.round(scale * 100)}%</span>
 				<button
 					onclick={() => zoom(1)}
-					disabled={scale >= MAX_SCALE || rendering}
+					disabled={scale >= maxScale() || rendering}
 					class="px-2 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
 					title="Zoom in"
 				>🔍+</button>

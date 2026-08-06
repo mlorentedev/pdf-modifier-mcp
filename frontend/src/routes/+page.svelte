@@ -39,6 +39,33 @@
 		history = [...history, { replacements: $state.snapshot(replacements) }];
 		historyIndex = history.length - 1;
 	}
+	// Editing a replacement input is one undo step: checkpoint the state when
+	// the user starts typing (focus) so undo restores the pre-edit value, and
+	// again on blur (only if the text actually changed) so redo can restore
+	// the typed value.
+	let editCheckpointed = $state(false);
+	function onEditFocus() {
+		if (!editCheckpointed) {
+			editCheckpointed = true;
+			saveToHistory();
+		}
+	}
+	function onEditBlur() {
+		if (editCheckpointed) {
+			editCheckpointed = false;
+			saveToHistoryIfChanged();
+		}
+	}
+	function saveToHistoryIfChanged() {
+		const snap = $state.snapshot(replacements);
+		const last = history[history.length - 1]?.replacements;
+		const unchanged =
+			last && JSON.stringify(last) === JSON.stringify(snap);
+		if (unchanged) return;
+		history = history.slice(0, historyIndex + 1);
+		history = [...history, { replacements: snap }];
+		historyIndex = history.length - 1;
+	}
 	function undo() {
 		if (historyIndex > 0) {
 			historyIndex--;
@@ -118,9 +145,6 @@
 		showToast(`Added "${group.text}" as replacement target`, 'info');
 	}
 
-	function updateReplacement(index: number, field: 'old' | 'new', value: string) {
-		replacements = replacements.map((r, i) => i === index ? { ...r, [field]: value } : r);
-	}
 
 	// Apply replacements
 	async function handleReplace() {
@@ -290,11 +314,11 @@
 				<div class="space-y-2 max-h-[400px] overflow-y-auto">
 					{#each replacements as replacement, i}
 						<div class="flex gap-2">
-							<input type="text" placeholder="Old text" value={replacement.old}
-								oninput={(e) => updateReplacement(i, 'old', e.currentTarget.value)}
+							<input type="text" placeholder="Old text" bind:value={replacement.old}
+								onfocus={onEditFocus} onblur={onEditBlur}
 								class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
-							<input type="text" placeholder="New text" value={replacement.new}
-								oninput={(e) => updateReplacement(i, 'new', e.currentTarget.value)}
+							<input type="text" placeholder="New text" bind:value={replacement.new}
+								onfocus={onEditFocus} onblur={onEditBlur}
 								class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
 							<button onclick={() => removeReplacement(i)}
 								class="px-2 py-2 bg-red-600/80 rounded hover:bg-red-500 text-sm">×</button>

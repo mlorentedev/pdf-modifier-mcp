@@ -76,4 +76,29 @@ test.describe('PDF preview workspace', () => {
 		expect(size.h).toBeGreaterThan(0);
 		await expect(page.locator('text=Highlighting:')).toBeVisible();
 	});
+
+	test('undo/redo restore manually edited replacement text', async ({ page }) => {
+		await uploadPdf(page);
+
+		const oldInput = page.locator('input[placeholder="Old text"]').first();
+		const undoBtn = page.getByRole('button', { name: /Undo/ });
+		const redoBtn = page.getByRole('button', { name: /Redo/ });
+
+		// Editing a replacement input must be undoable.
+		expect(await undoBtn.isDisabled()).toBe(true);
+		await oldInput.fill('Hola');
+		await oldInput.blur();
+		await page.waitForTimeout(200);
+		expect(await undoBtn.isDisabled()).toBe(false);
+
+		// Undo restores the empty value; the input DOM follows the state.
+		await undoBtn.click();
+		await page.waitForTimeout(200);
+		expect(await oldInput.inputValue()).toBe('');
+
+		// Redo restores the typed text.
+		await redoBtn.click();
+		await page.waitForTimeout(200);
+		expect(await oldInput.inputValue()).toBe('Hola');
+	});
 });
