@@ -45,6 +45,7 @@ help: ## Show available targets
 	@echo "Quality:"
 	@echo "  make check                  Lint + type + test (backend)"
 	@echo "  make check-frontend         svelte-check + vitest (frontend)"
+	@echo "  make test-e2e               Playwright e2e (starts stack)"
 	@echo "  make lint                   Ruff check"
 	@echo "  make format                 Ruff fix"
 	@echo "  make type                   Mypy"
@@ -129,6 +130,10 @@ check: lint type test-backend ## Lint + type + test
 check-frontend: ## svelte-check + vitest (frontend)
 	cd frontend && npm run check
 	cd frontend && npm test
+
+.PHONY: test-e2e
+test-e2e: up ## Playwright e2e against the running Docker stack
+	cd frontend && npm run test:e2e
 
 .PHONY: lint
 lint: ## Ruff check
