@@ -1,7 +1,7 @@
 ---
 id: "WEB-002-preview-element-grouping"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: implementing # draft | implementing | verifying | archived
 created: "2026-08-06"
 issue: "mlorentedev/pdf-modifier-mcp#118"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal]
