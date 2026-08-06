@@ -10,6 +10,8 @@ APP_NAME := pdf-modifier-mcp
 COMPOSE := docker compose
 COMPOSE_FILES := -f infra/compose.base.yml -f infra/compose.dev.yml
 COMPOSE_PROD := -f infra/compose.base.yml -f infra/compose.prod.yml
+ENV_FILE := infra/.env
+ENV_EXAMPLE := .env.example
 
 # Default target for commands with TARGET argument
 TARGET ?= all
@@ -27,6 +29,7 @@ help: ## Show available targets
 	@echo "  make setup                  Install all deps"
 	@echo "  make setup backend          Install backend deps only"
 	@echo "  make setup frontend         Install frontend deps only"
+	@echo "  make env                    Generate $(ENV_FILE) from example (idempotent)"
 	@echo ""
 	@echo "Run:"
 	@echo "  make run api                Start FastAPI dev server"
@@ -41,6 +44,7 @@ help: ## Show available targets
 	@echo ""
 	@echo "Quality:"
 	@echo "  make check                  Lint + type + test (backend)"
+	@echo "  make check-frontend         svelte-check + vitest (frontend)"
 	@echo "  make lint                   Ruff check"
 	@echo "  make format                 Ruff fix"
 	@echo "  make type                   Mypy"
@@ -58,6 +62,14 @@ help: ## Show available targets
 	@echo "Cleanup:"
 	@echo "  make clean                  Remove build artifacts"
 	@echo "  make housekeep              Clean Python + Docker"
+
+# =============================================================================
+# Env
+# =============================================================================
+.PHONY: env
+env: ## Generate $(ENV_FILE) from $(ENV_EXAMPLE) (idempotent; FORCE=1 to regenerate)
+	@mkdir -p infra
+	@python3 scripts/gen-env.py $(if $(filter 1,$(FORCE)),--force,)
 
 # =============================================================================
 # Setup
@@ -113,6 +125,11 @@ endif
 .PHONY: check
 check: lint type test-backend ## Lint + type + test
 
+.PHONY: check-frontend
+check-frontend: ## svelte-check + vitest (frontend)
+	cd frontend && npm run check
+	cd frontend && npm test
+
 .PHONY: lint
 lint: ## Ruff check
 	cd backend && $(UV) run ruff check src/ tests/
@@ -151,7 +168,7 @@ build-frontend: ## Build frontend for production
 # Docker
 # =============================================================================
 .PHONY: up
-up: ## Start dev stack (or TARGET=prod)
+up: env ## Start dev stack (or TARGET=prod)
 ifeq ($(TARGET),prod)
 	$(COMPOSE) $(COMPOSE_PROD) up -d --build
 else
