@@ -2,6 +2,7 @@
 	import { uploadPdf, getStructure, replaceText, downloadPdf, type StructureResponse, type Replacement } from '$lib/api/client';
 	import PdfPreview from '$lib/components/PdfPreview.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import { groupElements, type ElementGroup, type FocusTarget } from '$lib/utils/grouping';
 
 	// State
 	let sessionId = $state<string | null>(null);
@@ -15,6 +16,7 @@
 	let highlightText = $state('');
 	let toasts = $state<Array<{ id: number; message: string; type: 'success' | 'error' | 'info' }>>([]);
 	let searchQuery = $state('');
+	let focusTarget = $state<FocusTarget | null>(null);
 	let history = $state<Array<{ replacements: Replacement[] }>>([]);
 	let historyIndex = $state(-1);
 
@@ -107,11 +109,12 @@
 		saveToHistory();
 	}
 
-	function prefillFromElement(text: string) {
-		replacements = [...replacements, { old: text, new: '' }];
-		highlightText = text;
+	function prefillFromGroup(page: number, group: ElementGroup) {
+		replacements = [...replacements, { old: group.text, new: '' }];
+		highlightText = group.text;
+		focusTarget = { page, bbox: group.bbox };
 		saveToHistory();
-		showToast(`Added "${text}" as replacement target`, 'info');
+		showToast(`Added "${group.text}" as replacement target`, 'info');
 	}
 
 	function updateReplacement(index: number, field: 'old' | 'new', value: string) {
@@ -161,11 +164,18 @@
 		}
 	}
 
-	// Search
-	let filteredElements = $derived(
-		structure?.pages.flatMap(p => p.elements).filter(e =>
-			!searchQuery || e.text.toLowerCase().includes(searchQuery.toLowerCase())
-		) ?? []
+	// Grouped elements per page (display-only, does not change the API contract).
+	let groupedPages = $derived(
+		(structure?.pages ?? []).map(p => ({ page: p.page, groups: groupElements(p.elements) }))
+	);
+
+	// Flatten for the sidebar: searchable by group text.
+	let filteredGroups = $derived(
+		groupedPages.flatMap(gp =>
+			gp.groups
+				.filter(g => !searchQuery || g.text.toLowerCase().includes(searchQuery.toLowerCase()))
+				.map(g => ({ page: gp.page, group: g }))
+		)
 	);
 
 	// Drag handlers
@@ -251,16 +261,16 @@
 					bind:value={searchQuery}
 					class="w-full bg-gray-700 rounded px-3 py-2 text-sm mb-3"
 				/>
-				<div class="max-h-[600px] overflow-y-auto space-y-1">
-					{#each filteredElements as element}
+			<div class="max-h-[600px] overflow-y-auto space-y-1">
+					{#each filteredGroups as { page, group }}
 						<button
-							onclick={() => prefillFromElement(element.text)}
+							onclick={() => prefillFromGroup(page, group)}
 							class="w-full text-left bg-gray-700 p-2 rounded text-sm hover:bg-gray-600 transition-colors"
-							class:ring-2={highlightText === element.text}
-							class:ring-yellow-500={highlightText === element.text}
+							class:ring-2={highlightText === group.text}
+							class:ring-yellow-500={highlightText === group.text}
 						>
-							<div class="text-gray-200 truncate">{element.text}</div>
-							<div class="text-gray-500 text-xs">{element.font} {element.size}pt</div>
+							<div class="text-gray-200 truncate">{group.text}</div>
+							<div class="text-gray-500 text-xs">{group.font} {group.size}pt · p.{page}</div>
 						</button>
 					{/each}
 				</div>
@@ -269,7 +279,7 @@
 			<!-- PDF Preview (center) -->
 			<div class="col-span-5">
 				{#key uploadKey}
-					<PdfPreview {sessionId} {highlightText} />
+					<PdfPreview {sessionId} {highlightText} {focusTarget} />
 				{/key}
 			</div>
 

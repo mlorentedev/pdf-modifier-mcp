@@ -28,6 +28,12 @@ export interface ElementGroup {
 	elements: TextElement[];
 }
 
+/** Preview navigation target: which page to show and where to scroll. */
+export interface FocusTarget {
+	page: number;
+	bbox: [number, number, number, number];
+}
+
 /**
  * Maximum gap (as a multiple of the font size) allowed between consecutive
  * spans on the same baseline to consider them part of the same visual run.

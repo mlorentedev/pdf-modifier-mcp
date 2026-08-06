@@ -15,7 +15,7 @@ export interface PageStructure {
 	page: number;
 	width: number;
 	height: number;
-	text_elements: TextElement[];
+	elements: TextElement[];
 }
 
 export interface TextElement {

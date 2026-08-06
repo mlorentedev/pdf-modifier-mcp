@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import * as pdfjsLib from 'pdfjs-dist';
-	import { getHighlightRects, type HighlightViewport } from '$lib/utils/highlight';
+	import { getHighlightRects, type HighlightViewport, type HighlightTextItem } from '$lib/utils/highlight';
+	import { computeScrollTarget, type Rect } from '$lib/utils/scroll';
+	import type { FocusTarget } from '$lib/utils/grouping';
 
 	pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
-	let { sessionId, highlightText = '' }: { sessionId: string; highlightText?: string } = $props();
+	let {
+		sessionId,
+		highlightText = '',
+		focusTarget = null
+	}: { sessionId: string; highlightText?: string; focusTarget?: FocusTarget | null } = $props();
 
 	let canvas: HTMLCanvasElement;
 	let currentPage = $state(1);
@@ -47,6 +53,41 @@
 		renderPage(currentPage);
 	});
 
+	// Navigate + scroll to the focused element (click in the sidebar).
+	$effect(() => {
+		const target = focusTarget;
+		if (!target || !pdfDoc) return;
+		locateElement(target);
+	});
+
+	async function locateElement(target: FocusTarget) {
+		// Navigate to the element's page first if needed.
+		if (target.page !== currentPage) {
+			currentPage = target.page;
+			pageInput = String(target.page);
+		}
+		await renderPage(currentPage);
+		await tick();
+
+		const container = document.querySelector('.pdf-scroll') as HTMLElement | null;
+		if (!container) return;
+
+		const rect: Rect = {
+			x: target.bbox[0] * scale,
+			y: target.bbox[1] * scale,
+			width: (target.bbox[2] - target.bbox[0]) * scale,
+			height: (target.bbox[3] - target.bbox[1]) * scale
+		};
+		const { scrollTop, scrollLeft } = computeScrollTarget(rect, {
+			clientWidth: container.clientWidth,
+			clientHeight: container.clientHeight,
+			scrollWidth: container.scrollWidth,
+			scrollHeight: container.scrollHeight
+		});
+		container.scrollTop = scrollTop;
+		container.scrollLeft = scrollLeft;
+	}
+
 	async function renderPage(pageNum: number) {
 		if (!pdfDoc || !canvas) return;
 
@@ -64,7 +105,7 @@
 			canvas.width = viewport.width;
 
 			await page.render({
-				canvasContext: context,
+				canvas,
 				viewport
 			}).promise;
 
@@ -89,9 +130,14 @@
 		const context = canvas.getContext('2d');
 		if (!context) return;
 
-		const textItems = textContent.items.filter(
-			(i): i is { str: string; transform: number[]; width: number; height: number } => 'str' in i
-		);
+		const textItems: HighlightTextItem[] = textContent.items
+			.filter((i): i is Extract<(typeof textContent.items)[number], { str: string }> => 'str' in i)
+			.map(i => ({
+				str: i.str,
+				transform: [...i.transform],
+				width: i.width,
+				height: i.height
+			}));
 		const vp: HighlightViewport = { scale: viewport.scale, transform: viewport.transform };
 		const rects = getHighlightRects(term, textItems, vp);
 

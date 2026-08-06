@@ -9,7 +9,7 @@ describe('API Client', () => {
 	describe('uploadPdf', () => {
 		it('uploads a PDF file successfully', async () => {
 			const mockResponse = { session_id: 'abc123' };
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockResponse)
 			} as Response);
@@ -24,7 +24,7 @@ describe('API Client', () => {
 		});
 
 		it('throws error on upload failure', async () => {
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: false,
 				json: () => Promise.resolve({ detail: 'Invalid PDF' })
 			} as Response);
@@ -41,7 +41,7 @@ describe('API Client', () => {
 				total_pages: 1,
 				pages: []
 			};
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockStructure)
 			} as Response);
@@ -59,7 +59,7 @@ describe('API Client', () => {
 				pages_modified: 1,
 				warnings: []
 			};
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockResult)
 			} as Response);
@@ -80,7 +80,7 @@ describe('API Client', () => {
 	describe('downloadPdf', () => {
 		it('downloads modified PDF', async () => {
 			const mockBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: true,
 				blob: () => Promise.resolve(mockBlob)
 			} as Response);
@@ -92,7 +92,7 @@ describe('API Client', () => {
 
 	describe('deleteSession', () => {
 		it('deletes session', async () => {
-			vi.spyOn(global, 'fetch').mockResolvedValue({
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 				ok: true
 			} as Response);
 
