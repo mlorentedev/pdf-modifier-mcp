@@ -16,7 +16,7 @@
 	let canvas: HTMLCanvasElement;
 	let currentPage = $state(1);
 	let totalPages = $state(0);
-	let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+	let pdfDoc: pdfjsLib.PDFDocumentProxy | null = $state(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let scale = $state(1.5);
@@ -111,6 +111,7 @@
 		renderPromise = new Promise<void>(r => {
 			resolveDone = r;
 		});
+		const myRenderPromise = renderPromise;
 
 		// pdf.js forbids starting a new render on a canvas that is still being
 		// rendered. Cancel any in-flight task before starting a new one (this
@@ -127,6 +128,12 @@
 
 		try {
 			const page = await pdfDoc.getPage(pageNum);
+			// A newer render may have been requested while we awaited getPage
+			// (e.g. a sidebar click: highlight effect starts page N, locate
+			// effect supersedes with page M). Abort before touching the canvas —
+			// starting a render here would hit pdf.js's "Cannot use the same
+			// canvas during multiple render() operations" error.
+			if (token !== renderToken) return;
 			const viewport = page.getViewport({ scale });
 
 			const context = canvas.getContext('2d');
@@ -152,7 +159,9 @@
 			if (e instanceof Error && e.name === 'RenderingCancelledException') return;
 			error = e instanceof Error ? e.message : 'Failed to render page';
 		} finally {
-			if (renderPromise) renderPromise = null;
+			// Only clear the promise this invocation created — a newer render may
+			// have replaced renderPromise meanwhile.
+			if (renderPromise === myRenderPromise) renderPromise = null;
 			resolveDone();
 			if (token === renderToken) rendering = false;
 		}

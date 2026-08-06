@@ -106,4 +106,27 @@ describe('PdfPreview render coordination (regression: same-canvas render error)'
 		expect(page1Calls.length).toBeGreaterThan(0);
 		expect(page1Calls.some(c => c.cancelled)).toBe(true);
 	});
+
+	it('aborts a superseded render before touching the canvas (page change race)', async () => {
+		const { rerender } = render(PdfPreview, { sessionId: 's3' });
+
+		await waitFor(() => {
+			expect(renderCalls.length).toBeGreaterThanOrEqual(1);
+		});
+
+		// Navigate to page 2: the highlight effect starts a render on page 1
+		// and locateElement supersedes it with page 2 while getPage(1) is still
+		// pending. The stale render must abort BEFORE page.render() is called on
+		// the busy canvas (pdf.js "Cannot use the same canvas" error).
+		await rerender({ highlightText: 'x', focusTarget: { page: 2, bbox: [0, 0, 50, 12] } });
+		await new Promise(r => setTimeout(r, 30));
+
+		// Only page-2 renders may be started after the navigation; no page-1
+		// render may start concurrently with a page-2 render.
+		const page2Calls = renderCalls.filter(c => c.page === 2);
+		const page1AfterNav = renderCalls.filter(c => c.page === 1);
+		expect(page2Calls.length).toBeGreaterThanOrEqual(1);
+		// The initial page-1 render may have been superseded before starting.
+		expect(page1AfterNav.length).toBeLessThanOrEqual(1);
+	});
 });
