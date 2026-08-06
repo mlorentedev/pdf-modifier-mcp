@@ -2,6 +2,7 @@
 	import { uploadPdf, getStructure, replaceText, downloadPdf, type StructureResponse, type Replacement } from '$lib/api/client';
 	import PdfPreview from '$lib/components/PdfPreview.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import { groupElements, type ElementGroup, type FocusTarget } from '$lib/utils/grouping';
 
 	// State
 	let sessionId = $state<string | null>(null);
@@ -15,6 +16,7 @@
 	let highlightText = $state('');
 	let toasts = $state<Array<{ id: number; message: string; type: 'success' | 'error' | 'info' }>>([]);
 	let searchQuery = $state('');
+	let focusTarget = $state<FocusTarget | null>(null);
 	let history = $state<Array<{ replacements: Replacement[] }>>([]);
 	let historyIndex = $state(-1);
 
@@ -30,22 +32,50 @@
 		toasts = toasts.filter(t => t.id !== id);
 	}
 
-	// History management
+	// History management. $state values are Proxies that structuredClone cannot
+	// clone ("could not be cloned"); snapshot() produces plain clonable values.
 	function saveToHistory() {
 		history = history.slice(0, historyIndex + 1);
-		history = [...history, { replacements: structuredClone(replacements) }];
+		history = [...history, { replacements: $state.snapshot(replacements) }];
+		historyIndex = history.length - 1;
+	}
+	// Editing a replacement input is one undo step: checkpoint the state when
+	// the user starts typing (focus) so undo restores the pre-edit value, and
+	// again on blur (only if the text actually changed) so redo can restore
+	// the typed value.
+	let editCheckpointed = $state(false);
+	function onEditFocus() {
+		if (!editCheckpointed) {
+			editCheckpointed = true;
+			saveToHistory();
+		}
+	}
+	function onEditBlur() {
+		if (editCheckpointed) {
+			editCheckpointed = false;
+			saveToHistoryIfChanged();
+		}
+	}
+	function saveToHistoryIfChanged() {
+		const snap = $state.snapshot(replacements);
+		const last = history[history.length - 1]?.replacements;
+		const unchanged =
+			last && JSON.stringify(last) === JSON.stringify(snap);
+		if (unchanged) return;
+		history = history.slice(0, historyIndex + 1);
+		history = [...history, { replacements: snap }];
 		historyIndex = history.length - 1;
 	}
 	function undo() {
 		if (historyIndex > 0) {
 			historyIndex--;
-			replacements = structuredClone(history[historyIndex].replacements);
+			replacements = $state.snapshot(history[historyIndex].replacements);
 		}
 	}
 	function redo() {
 		if (historyIndex < history.length - 1) {
 			historyIndex++;
-			replacements = structuredClone(history[historyIndex].replacements);
+			replacements = $state.snapshot(history[historyIndex].replacements);
 		}
 	}
 
@@ -107,16 +137,14 @@
 		saveToHistory();
 	}
 
-	function prefillFromElement(text: string) {
-		replacements = [...replacements, { old: text, new: '' }];
-		highlightText = text;
+	function prefillFromGroup(page: number, group: ElementGroup) {
+		replacements = [...replacements, { old: group.text, new: '' }];
+		highlightText = group.text;
+		focusTarget = { page, bbox: group.bbox };
 		saveToHistory();
-		showToast(`Added "${text}" as replacement target`, 'info');
+		showToast(`Added "${group.text}" as replacement target`, 'info');
 	}
 
-	function updateReplacement(index: number, field: 'old' | 'new', value: string) {
-		replacements = replacements.map((r, i) => i === index ? { ...r, [field]: value } : r);
-	}
 
 	// Apply replacements
 	async function handleReplace() {
@@ -161,11 +189,18 @@
 		}
 	}
 
-	// Search
-	let filteredElements = $derived(
-		structure?.pages.flatMap(p => p.elements).filter(e =>
-			!searchQuery || e.text.toLowerCase().includes(searchQuery.toLowerCase())
-		) ?? []
+	// Grouped elements per page (display-only, does not change the API contract).
+	let groupedPages = $derived(
+		(structure?.pages ?? []).map(p => ({ page: p.page, groups: groupElements(p.elements) }))
+	);
+
+	// Flatten for the sidebar: searchable by group text.
+	let filteredGroups = $derived(
+		groupedPages.flatMap(gp =>
+			gp.groups
+				.filter(g => !searchQuery || g.text.toLowerCase().includes(searchQuery.toLowerCase()))
+				.map(g => ({ page: gp.page, group: g }))
+		)
 	);
 
 	// Drag handlers
@@ -251,16 +286,16 @@
 					bind:value={searchQuery}
 					class="w-full bg-gray-700 rounded px-3 py-2 text-sm mb-3"
 				/>
-				<div class="max-h-[600px] overflow-y-auto space-y-1">
-					{#each filteredElements as element}
+			<div class="max-h-[600px] overflow-y-auto space-y-1">
+					{#each filteredGroups as { page, group }}
 						<button
-							onclick={() => prefillFromElement(element.text)}
+							onclick={() => prefillFromGroup(page, group)}
 							class="w-full text-left bg-gray-700 p-2 rounded text-sm hover:bg-gray-600 transition-colors"
-							class:ring-2={highlightText === element.text}
-							class:ring-yellow-500={highlightText === element.text}
+							class:ring-2={highlightText === group.text}
+							class:ring-yellow-500={highlightText === group.text}
 						>
-							<div class="text-gray-200 truncate">{element.text}</div>
-							<div class="text-gray-500 text-xs">{element.font} {element.size}pt</div>
+							<div class="text-gray-200 truncate">{group.text}</div>
+							<div class="text-gray-500 text-xs">{group.font} {group.size}pt · p.{page}</div>
 						</button>
 					{/each}
 				</div>
@@ -269,7 +304,7 @@
 			<!-- PDF Preview (center) -->
 			<div class="col-span-5">
 				{#key uploadKey}
-					<PdfPreview {sessionId} {highlightText} />
+					<PdfPreview {sessionId} {highlightText} {focusTarget} />
 				{/key}
 			</div>
 
@@ -279,11 +314,11 @@
 				<div class="space-y-2 max-h-[400px] overflow-y-auto">
 					{#each replacements as replacement, i}
 						<div class="flex gap-2">
-							<input type="text" placeholder="Old text" value={replacement.old}
-								oninput={(e) => updateReplacement(i, 'old', e.currentTarget.value)}
+							<input type="text" placeholder="Old text" bind:value={replacement.old}
+								onfocus={onEditFocus} onblur={onEditBlur}
 								class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
-							<input type="text" placeholder="New text" value={replacement.new}
-								oninput={(e) => updateReplacement(i, 'new', e.currentTarget.value)}
+							<input type="text" placeholder="New text" bind:value={replacement.new}
+								onfocus={onEditFocus} onblur={onEditBlur}
 								class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
 							<button onclick={() => removeReplacement(i)}
 								class="px-2 py-2 bg-red-600/80 rounded hover:bg-red-500 text-sm">×</button>

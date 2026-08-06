@@ -7,6 +7,12 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit()
 	],
+	resolve: {
+		// Component tests must resolve svelte to the client build (index-client),
+		// otherwise mount() fails with "not available on the server". This is the
+		// documented setup for @testing-library/svelte with vitest.
+		conditions: ['module', 'browser', 'development|production']
+	},
 	server: {
 		proxy: {
 			'/api': {

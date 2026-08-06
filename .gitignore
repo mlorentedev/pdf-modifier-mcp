@@ -34,6 +34,7 @@ storage/
 
 # PDFs (except test data)
 *.pdf
+!frontend/e2e/fixtures/*.pdf
 !tests/data/*.pdf
 !backend/tests/data/*.pdf
 

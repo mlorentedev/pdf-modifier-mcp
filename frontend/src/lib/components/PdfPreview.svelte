@@ -1,25 +1,47 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import * as pdfjsLib from 'pdfjs-dist';
-	import { getHighlightRects, type HighlightViewport } from '$lib/utils/highlight';
+	import { getHighlightRects, type HighlightViewport, type HighlightTextItem } from '$lib/utils/highlight';
+	import { computeScrollTarget, type Rect } from '$lib/utils/scroll';
+	import { computeMaxScale } from '$lib/utils/zoom';
+	import type { FocusTarget } from '$lib/utils/grouping';
 
 	pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
-	let { sessionId, highlightText = '' }: { sessionId: string; highlightText?: string } = $props();
+	let {
+		sessionId,
+		highlightText = '',
+		focusTarget = null
+	}: { sessionId: string; highlightText?: string; focusTarget?: FocusTarget | null } = $props();
 
 	let canvas: HTMLCanvasElement;
 	let currentPage = $state(1);
 	let totalPages = $state(0);
-	let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+	let pdfDoc: pdfjsLib.PDFDocumentProxy | null = $state(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let scale = $state(1.5);
 	let pageInput = $state('1');
 	let rendering = $state(false);
 	let renderToken = 0;
+	let renderTask: pdfjsLib.RenderTask | null = null;
+	let renderPromise: Promise<void> | null = null;
 
 	const MIN_SCALE = 0.25;
-	const MAX_SCALE = 4;
+	const MAX_SCALE = 4; // hard cap; dynamic ceiling computed per screen
+
+	// Dynamic zoom ceiling: the scale at which one canvas pixel equals one
+	// physical screen pixel. Beyond it the browser downscales an oversized
+	// canvas, producing blurry/distorted text.
+	function maxScale(): number {
+		if (!pdfDoc || !canvas || !canvas.width) return MAX_SCALE;
+		const pageWidth = canvas.width / scale; // page width at scale 1 (px)
+		return computeMaxScale({
+			pageWidth,
+			screenWidth: window.screen.width,
+			devicePixelRatio: window.devicePixelRatio || 1
+		});
+	}
 	const ZOOM_STEP = 1.25;
 
 	onMount(async () => {
@@ -47,14 +69,85 @@
 		renderPage(currentPage);
 	});
 
+	// Navigate + scroll to the focused element (click in the sidebar).
+	$effect(() => {
+		const target = focusTarget;
+		if (!target || !pdfDoc) return;
+		locateElement(target);
+	});
+
+	async function locateElement(target: FocusTarget) {
+		// Navigate to the element's page first if needed.
+		const pageChanged = target.page !== currentPage;
+		if (pageChanged) {
+			currentPage = target.page;
+			pageInput = String(target.page);
+		}
+
+		// If the highlight effect already started a render on this page, reuse it
+		// instead of triggering a second render on the same canvas.
+		if (renderPromise && !pageChanged) {
+			await renderPromise;
+		} else {
+			await renderPage(currentPage);
+		}
+		await tick();
+
+		const container = document.querySelector('.pdf-scroll') as HTMLElement | null;
+		if (!container) return;
+
+		const rect: Rect = {
+			x: target.bbox[0] * scale,
+			y: target.bbox[1] * scale,
+			width: (target.bbox[2] - target.bbox[0]) * scale,
+			height: (target.bbox[3] - target.bbox[1]) * scale
+		};
+		const { scrollTop, scrollLeft } = computeScrollTarget(rect, {
+			clientWidth: container.clientWidth,
+			clientHeight: container.clientHeight,
+			scrollWidth: container.scrollWidth,
+			scrollHeight: container.scrollHeight
+		});
+		container.scrollTop = scrollTop;
+		container.scrollLeft = scrollLeft;
+	}
+
 	async function renderPage(pageNum: number) {
 		if (!pdfDoc || !canvas) return;
 
 		const token = ++renderToken;
 		rendering = true;
 
+		// Expose the in-flight render synchronously so concurrent effects (e.g.
+		// locateElement right after a highlight change) can await it instead of
+		// starting a second render on the same canvas.
+		let resolveDone: () => void = () => {};
+		renderPromise = new Promise<void>(r => {
+			resolveDone = r;
+		});
+		const myRenderPromise = renderPromise;
+
+		// pdf.js forbids starting a new render on a canvas that is still being
+		// rendered. Cancel any in-flight task before starting a new one (this
+		// happens when a sidebar click fires the highlight effect and the
+		// locate effect in quick succession).
+		if (renderTask) {
+			try {
+				renderTask.cancel();
+			} catch {
+				// already finished/cancelled — nothing to do
+			}
+			renderTask = null;
+		}
+
 		try {
 			const page = await pdfDoc.getPage(pageNum);
+			// A newer render may have been requested while we awaited getPage
+			// (e.g. a sidebar click: highlight effect starts page N, locate
+			// effect supersedes with page M). Abort before touching the canvas —
+			// starting a render here would hit pdf.js's "Cannot use the same
+			// canvas during multiple render() operations" error.
+			if (token !== renderToken) return;
 			const viewport = page.getViewport({ scale });
 
 			const context = canvas.getContext('2d');
@@ -63,10 +156,10 @@
 			canvas.height = viewport.height;
 			canvas.width = viewport.width;
 
-			await page.render({
-				canvasContext: context,
-				viewport
-			}).promise;
+			const task = page.render({ canvas, viewport });
+			renderTask = task;
+
+			await task.promise;
 
 			// If a newer render was requested meanwhile, don't overlay stale highlights
 			if (token !== renderToken) return;
@@ -75,8 +168,15 @@
 				console.error('PDF highlight error:', e);
 			});
 		} catch (e) {
+			// A cancelled render is expected whenever a newer one supersedes it;
+			// it is not a user-facing failure.
+			if (e instanceof Error && e.name === 'RenderingCancelledException') return;
 			error = e instanceof Error ? e.message : 'Failed to render page';
 		} finally {
+			// Only clear the promise this invocation created — a newer render may
+			// have replaced renderPromise meanwhile.
+			if (renderPromise === myRenderPromise) renderPromise = null;
+			resolveDone();
 			if (token === renderToken) rendering = false;
 		}
 	}
@@ -89,9 +189,14 @@
 		const context = canvas.getContext('2d');
 		if (!context) return;
 
-		const textItems = textContent.items.filter(
-			(i): i is { str: string; transform: number[]; width: number; height: number } => 'str' in i
-		);
+		const textItems: HighlightTextItem[] = textContent.items
+			.filter((i): i is Extract<(typeof textContent.items)[number], { str: string }> => 'str' in i)
+			.map(i => ({
+				str: i.str,
+				transform: [...i.transform],
+				width: i.width,
+				height: i.height
+			}));
 		const vp: HighlightViewport = { scale: viewport.scale, transform: viewport.transform };
 		const rects = getHighlightRects(term, textItems, vp);
 
@@ -102,7 +207,8 @@
 	}
 
 	function zoom(dir: 1 | -1) {
-		const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (dir > 0 ? ZOOM_STEP : 1 / ZOOM_STEP)));
+		const limit = maxScale();
+		const next = Math.min(limit, Math.max(MIN_SCALE, scale * (dir > 0 ? ZOOM_STEP : 1 / ZOOM_STEP)));
 		if (next === scale) return;
 		scale = next;
 		renderPage(currentPage);
@@ -114,7 +220,7 @@
 		const cw = container.clientWidth - 24;
 		pdfDoc.getPage(currentPage).then(page => {
 			const base = page.getViewport({ scale: 1 });
-			scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cw / base.width));
+			scale = Math.max(MIN_SCALE, Math.min(maxScale(), cw / base.width));
 			renderPage(currentPage);
 		});
 	}
@@ -199,7 +305,7 @@
 				<span class="text-gray-400 text-xs w-12 text-center">{Math.round(scale * 100)}%</span>
 				<button
 					onclick={() => zoom(1)}
-					disabled={scale >= MAX_SCALE || rendering}
+					disabled={scale >= maxScale() || rendering}
 					class="px-2 py-1 bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-600 text-sm"
 					title="Zoom in"
 				>🔍+</button>

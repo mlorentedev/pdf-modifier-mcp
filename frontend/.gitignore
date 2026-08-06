@@ -4,3 +4,9 @@ build/
 .vite/
 *.log
 static/pdf.worker.min.mjs
+
+# Playwright e2e artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
