@@ -7,7 +7,7 @@ services:
   api:
     volumes:
       # Mount only src/ for hot-reload — venv stays at /opt/venv (untouched)
-      - ../src:/app/src:delegated
+      - ../backend/src:/app/src:delegated
       - storage-data:/app/storage
     environment:
       - APP_ENV=development
