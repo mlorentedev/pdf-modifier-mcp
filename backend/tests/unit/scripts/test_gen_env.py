@@ -8,7 +8,14 @@ from pathlib import Path
 
 # The generator script lives at the repo root (scripts/gen-env.py), outside
 # the backend package — load it by file path instead of package import.
-REPO_ROOT = Path(__file__).resolve().parents[4]
+# Walk up from this test file until scripts/gen-env.py is found (robust to
+# checkout layout: backend/tests/unit/scripts/ here, different depth elsewhere).
+REPO_ROOT = Path(__file__).resolve()
+while not (REPO_ROOT / "scripts" / "gen-env.py").is_file():
+    parent = REPO_ROOT.parent
+    if parent == REPO_ROOT:
+        raise FileNotFoundError("could not locate repo root with scripts/gen-env.py")
+    REPO_ROOT = parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -65,7 +72,7 @@ def test_render_env_generates_nonempty_secret_key(tmp_path: Path) -> None:
 
     out = render_env(example)
 
-    secret_lines = [l for l in out.splitlines() if l.startswith("SECRET_KEY=")]
+    secret_lines = [line for line in out.splitlines() if line.startswith("SECRET_KEY=")]
     # Exactly one SECRET_KEY line, with a non-empty value.
     assert len(secret_lines) == 1
     assert len(secret_lines[0]) > len("SECRET_KEY=")
@@ -79,7 +86,7 @@ def test_render_env_secret_is_random_each_call(tmp_path: Path) -> None:
     out2 = render_env(example)
 
     def secret(content: str) -> str:
-        return next(l for l in content.splitlines() if l.startswith("SECRET_KEY="))
+        return next(line for line in content.splitlines() if line.startswith("SECRET_KEY="))
 
     assert secret(out1) != secret(out2)
 
