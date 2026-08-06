@@ -32,22 +32,23 @@
 		toasts = toasts.filter(t => t.id !== id);
 	}
 
-	// History management
+	// History management. $state values are Proxies that structuredClone cannot
+	// clone ("could not be cloned"); snapshot() produces plain clonable values.
 	function saveToHistory() {
 		history = history.slice(0, historyIndex + 1);
-		history = [...history, { replacements: structuredClone(replacements) }];
+		history = [...history, { replacements: $state.snapshot(replacements) }];
 		historyIndex = history.length - 1;
 	}
 	function undo() {
 		if (historyIndex > 0) {
 			historyIndex--;
-			replacements = structuredClone(history[historyIndex].replacements);
+			replacements = $state.snapshot(history[historyIndex].replacements);
 		}
 	}
 	function redo() {
 		if (historyIndex < history.length - 1) {
 			historyIndex++;
-			replacements = structuredClone(history[historyIndex].replacements);
+			replacements = $state.snapshot(history[historyIndex].replacements);
 		}
 	}
 

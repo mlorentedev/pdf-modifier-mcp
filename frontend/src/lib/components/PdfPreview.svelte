@@ -23,6 +23,8 @@
 	let pageInput = $state('1');
 	let rendering = $state(false);
 	let renderToken = 0;
+	let renderTask: pdfjsLib.RenderTask | null = null;
+	let renderPromise: Promise<void> | null = null;
 
 	const MIN_SCALE = 0.25;
 	const MAX_SCALE = 4;
@@ -62,11 +64,19 @@
 
 	async function locateElement(target: FocusTarget) {
 		// Navigate to the element's page first if needed.
-		if (target.page !== currentPage) {
+		const pageChanged = target.page !== currentPage;
+		if (pageChanged) {
 			currentPage = target.page;
 			pageInput = String(target.page);
 		}
-		await renderPage(currentPage);
+
+		// If the highlight effect already started a render on this page, reuse it
+		// instead of triggering a second render on the same canvas.
+		if (renderPromise && !pageChanged) {
+			await renderPromise;
+		} else {
+			await renderPage(currentPage);
+		}
 		await tick();
 
 		const container = document.querySelector('.pdf-scroll') as HTMLElement | null;
@@ -94,6 +104,27 @@
 		const token = ++renderToken;
 		rendering = true;
 
+		// Expose the in-flight render synchronously so concurrent effects (e.g.
+		// locateElement right after a highlight change) can await it instead of
+		// starting a second render on the same canvas.
+		let resolveDone: () => void = () => {};
+		renderPromise = new Promise<void>(r => {
+			resolveDone = r;
+		});
+
+		// pdf.js forbids starting a new render on a canvas that is still being
+		// rendered. Cancel any in-flight task before starting a new one (this
+		// happens when a sidebar click fires the highlight effect and the
+		// locate effect in quick succession).
+		if (renderTask) {
+			try {
+				renderTask.cancel();
+			} catch {
+				// already finished/cancelled — nothing to do
+			}
+			renderTask = null;
+		}
+
 		try {
 			const page = await pdfDoc.getPage(pageNum);
 			const viewport = page.getViewport({ scale });
@@ -104,10 +135,10 @@
 			canvas.height = viewport.height;
 			canvas.width = viewport.width;
 
-			await page.render({
-				canvas,
-				viewport
-			}).promise;
+			const task = page.render({ canvas, viewport });
+			renderTask = task;
+
+			await task.promise;
 
 			// If a newer render was requested meanwhile, don't overlay stale highlights
 			if (token !== renderToken) return;
@@ -116,8 +147,13 @@
 				console.error('PDF highlight error:', e);
 			});
 		} catch (e) {
+			// A cancelled render is expected whenever a newer one supersedes it;
+			// it is not a user-facing failure.
+			if (e instanceof Error && e.name === 'RenderingCancelledException') return;
 			error = e instanceof Error ? e.message : 'Failed to render page';
 		} finally {
+			if (renderPromise) renderPromise = null;
+			resolveDone();
 			if (token === renderToken) rendering = false;
 		}
 	}
