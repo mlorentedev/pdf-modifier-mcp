@@ -16,13 +16,21 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { groupElements } from '../frontend/src/lib/utils/grouping.ts';
 
-const dir = process.argv[2] ?? '/tmp/pdf-eval';
+let dir = process.argv[2] ?? '/tmp/pdf-eval';
 const showFonts = process.argv.includes('--fonts');
 
 let failed = 0;
-for (const file of readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
-	const data = JSON.parse(readFileSync(join(dir, file), 'utf-8'));
-	console.log(`\n=== ${file} ===`);
+let files: string[];
+try {
+	files = readdirSync(dir).filter(f => f.endsWith('.json')).sort();
+	files = files.map(f => join(dir, f));
+} catch {
+	// Single-file mode: arg is a .json path.
+	files = [dir];
+}
+for (const file of files) {
+	const data = JSON.parse(readFileSync(file, 'utf-8'));
+	console.log(`\n=== ${file.split('/').pop()} ===`);
 	for (const page of data.pages as Array<{ page: number; elements: any[] }>) {
 		const groups = groupElements(page.elements as any);
 		const lines = groups.map(g => {
