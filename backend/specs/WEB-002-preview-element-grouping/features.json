@@ -1,0 +1,30 @@
+[
+  {
+    "id": "WEB-002-f1",
+    "behavior": "Sidebar groups consecutive same-line/same-font/same-size spans into one entry; two-column layout does not merge across columns",
+    "verification": "cd frontend && npx vitest run src/lib/utils/grouping.test.ts",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "WEB-002-f2",
+    "behavior": "Clicking a sidebar entry navigates the preview to the element's page and scrolls the container so the highlight is visible",
+    "verification": "cd frontend && npx vitest run src/lib/components/PdfPreview.test.ts",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "WEB-002-f3",
+    "behavior": "Highlight rects cover only the matched text bounds (proportional within item), not the full pdf.js item width",
+    "verification": "cd frontend && npx vitest run src/lib/utils/highlight.test.ts",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "WEB-002-f4",
+    "behavior": "Type contract matches backend serialization (elements, not text_elements); svelte-check passes; backend/ untouched",
+    "verification": "cd frontend && npm run check && cd .. && git diff --name-only master -- backend/ | grep -q . && exit 1 || exit 0",
+    "state": "pending",
+    "evidence": ""
+  }
+]
