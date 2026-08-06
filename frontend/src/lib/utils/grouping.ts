@@ -61,9 +61,31 @@ function gapBetween(prev: TextElement, next: TextElement): number {
 function mergeGroup(spans: TextElement[]): ElementGroup {
 	const first = spans[0];
 	const last = spans[spans.length - 1];
+
+	// Join spans with a single space, but never double it when a span itself
+	// is whitespace (PyMuPDF emits explicit ' ' spans between words).
+	let text = '';
+	for (const s of spans) {
+		if (!text) {
+			text = s.text;
+		} else if (text.endsWith(' ') || s.text.startsWith(' ') || s.text === '') {
+			text += s.text;
+		} else {
+			text += ' ' + s.text;
+		}
+	}
+	// Trim stray leading/trailing whitespace left by boundary space spans.
+	text = text.trim();
+
+	// Bbox should span only visible text: skip leading/trailing whitespace
+	// spans so click-to-locate targets the words, not a stray space.
+	const visible = spans.filter(s => s.text.trim().length > 0);
+	const firstVisible = visible[0] ?? first;
+	const lastVisible = visible[visible.length - 1] ?? last;
+
 	return {
-		text: spans.map(s => s.text).join(' '),
-		bbox: [first.bbox[0], first.bbox[1], last.bbox[2], last.bbox[3]],
+		text,
+		bbox: [firstVisible.bbox[0], firstVisible.bbox[1], lastVisible.bbox[2], lastVisible.bbox[3]],
 		origin: [...first.origin],
 		font: first.font,
 		size: first.size,

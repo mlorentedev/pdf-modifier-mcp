@@ -134,4 +134,50 @@ describe('groupElements', () => {
 		expect(groups[0].elements[0].text).toBe('Hello');
 		expect(groups[0].elements[1].text).toBe('World');
 	});
+
+	describe('PyMuPDF real-world spans (explicit space spans)', () => {
+		it('merges word + space span + word into a single spaced group', () => {
+			// PyMuPDF emits 'Hello' (0-32), ' ' (32-37), 'World' (37-73).
+			const elements = [
+				el('Hello', 0, 0, 32, 12),
+				el(' ', 32, 0, 37, 12),
+				el('World', 37, 0, 73, 12)
+			];
+			const groups = groupElements(elements);
+
+			expect(groups).toHaveLength(1);
+			expect(groups[0].text).toBe('Hello World'); // single space, no doubles
+			expect(groups[0].bbox).toEqual([0, 0, 73, 12]);
+		});
+
+		it('drops a leading space span from the group text and bbox', () => {
+			// Style change inside a line: 'Different'(helv) then ' '(Times) 'Font'(Times).
+			const elements = [
+				el('Different', 0, 0, 53, 12, 'Helvetica', 12),
+				el(' ', 53, 0, 58, 12, 'Times-Roman', 12),
+				el('Font', 58, 0, 84, 12, 'Times-Roman', 12)
+			];
+			const groups = groupElements(elements);
+
+			// 'Different' can't merge (different font); ' ' + 'Font' merge.
+			expect(groups).toHaveLength(2);
+			expect(groups[0].text).toBe('Different');
+			expect(groups[1].text).toBe('Font'); // leading space trimmed
+			expect(groups[1].bbox).toEqual([58, 0, 84, 12]); // no space in bbox
+		});
+
+		it('keeps real inner spaces when a group contains multiple words', () => {
+			const elements = [
+				el('Hello', 0, 0, 32, 12),
+				el(' ', 32, 0, 37, 12),
+				el('World', 37, 0, 73, 12),
+				el(' ', 73, 0, 78, 12),
+				el('Again', 78, 0, 110, 12)
+			];
+			const groups = groupElements(elements);
+
+			expect(groups).toHaveLength(1);
+			expect(groups[0].text).toBe('Hello World Again');
+		});
+	});
 });
