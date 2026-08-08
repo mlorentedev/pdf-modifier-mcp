@@ -73,3 +73,24 @@ owner: manu
 3. **Svelte 5 + pdf.js concurrency** — a sidebar click fires two effects that both render the same canvas; pdf.js throws "Cannot use the same canvas during multiple render()". Fix: cancel the in-flight RenderTask, expose the render promise synchronously (before `await getPage()`), and abort a superseded render right after `getPage()` if the render token changed.
 **Solution:** Two-tier grouping heuristic — strong rule (gap ≤ 0.5×size, same baseline) merges regardless of font/size to recover Type3 fragments ("B"+"ooking" → "Booking"); weak rule (gap ≤ 1.2×size + same font/size) for inter-word spacing; column gutters stay split. Validate against real PDFs locally with `scripts/dump-pdf-spans.py` + `scripts/eval-grouping.ts`.
 **Tags:** `#frontend` `#pdfjs` `#svelte5` `#grouping` `#type3` `#canvas`
+
+### [2026-06-24] Bind mount silently overwrites a venv built into the image
+**Context:** INFRA-001 — dev compose mounted the repo as `../:/app` over an image whose venv had been created at `/app/.venv` during build.
+**Problem:** The container died with `uvicorn: not found` even though the build log clearly showed a successful install. Nothing in the build output hints at the failure, because the build genuinely succeeded — the breakage happens at run time.
+**Solution:** Move the venv outside every mount point: create it at `/opt/venv` and point `PATH` at `/opt/venv/bin`. Update the Dockerfile and both compose files together.
+**Why:** A bind mount replaces the image's directory contents at that path wholesale. Anything the build wrote under the mount point still exists in the image layer but is invisible at run time — the host directory shadows it. Any build artifact living under a path you also mount is subject to this; the venv is just the most common casualty.
+**Tags:** `#docker` `#compose` `#venv` `#bind-mount` `#debugging`
+
+### [2026-06-24] .gitignore negation patterns match paths literally, not by suffix
+**Context:** Moved the test suite to `backend/tests/` and the fixture `sample.pdf` stopped being tracked.
+**Problem:** CI failed with "PDF file not found". The un-ignore rule `!tests/data/*.pdf` was still present and looked correct, but no longer matched anything after the move.
+**Solution:** Add `!backend/tests/data/*.pdf` to match the new location, and drop the over-broad `data/` rule that was ignoring the directory in the first place.
+**Why:** A pattern containing a `/` anywhere except at the end is anchored to the `.gitignore` file's directory — `tests/data/*.pdf` means exactly `<root>/tests/data/`, not "any path ending in tests/data". Moving a directory therefore silently invalidates every anchored negation that pointed into it. A negation also cannot resurrect a file whose *parent directory* is excluded, so the broad `data/` rule had to go regardless. Verify with `git check-ignore -v <path>`, which prints the exact rule that decided.
+**Tags:** `#git` `#gitignore` `#ci` `#file-tracking`
+
+### [2026-06-24] GitHub Actions: uv-installed tools need `uv run`, not bare names
+**Context:** Security and mutation workflows invoking `pip-audit`, `bandit`, and `mutmut` after installing them with uv.
+**Problem:** Every job failed with `command not found`, despite the install step reporting success.
+**Solution:** Invoke them through the project environment — `uv run pip-audit`, `uv run bandit`, `uv run mutmut`. (Fixed alongside a wrong gitleaks action major version, v8 → v3.)
+**Why:** uv installs into the project's `.venv` without activating it; each `run:` step is a fresh non-login shell that never sources it, so the venv's `bin/` is absent from `PATH`. `uv run` resolves the environment explicitly per invocation, which is why it works where the bare name does not. The alternative — activating the venv in every step — is more fragile because activation does not persist across steps.
+**Tags:** `#ci` `#github-actions` `#uv` `#debugging`
