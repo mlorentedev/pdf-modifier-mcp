@@ -1,3 +1,12 @@
+# Hooks that declare no stages default to EVERY stage. Since git hooks are
+# dispatched machine-wide via core.hooksPath, every hook type git fires
+# (pre-commit, prepare-commit-msg, commit-msg, post-checkout, pre-push) reaches
+# pre-commit, so a stage-agnostic hook ran once per type — gitleaks and the rest
+# executed 3x per commit plus once per checkout and push. Pinning the default to
+# pre-commit runs them exactly once, where they belong. Hooks that need another
+# stage still say so explicitly (see conventional-pre-commit below).
+default_stages: [pre-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
