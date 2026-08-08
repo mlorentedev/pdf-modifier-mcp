@@ -1,9 +1,16 @@
 # Gitleaks configuration
-# Allowlist specific files/patterns that are false positives
+#
+# [extend] is NOT optional. A custom config REPLACES the built-in ruleset rather
+# than adding to it, so this file without useDefault left gitleaks running with
+# zero rules — scanning everything, matching nothing, and reporting "no leaks
+# found" on a planted GitHub PAT both locally and in CI. Never add an allowlist
+# here without this block.
+[extend]
+  useDefault = true
 
 [allowlist]
   description = "Allowlist for false positives"
   paths = [
     # safe-gh-pr contains detection patterns (not real secrets)
-    "scripts/safe-gh-pr",
+    '''scripts/safe-gh-pr''',
   ]
