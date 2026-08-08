@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.8.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.7.1...v1.8.0) (2026-08-06)
+
+
+### Features
+
+* **web:** PDF preview — element grouping, click-to-locate, precise highlight ([#118](https://github.com/mlorentedev/pdf-modifier-mcp/issues/118)) ([#121](https://github.com/mlorentedev/pdf-modifier-mcp/issues/121)) ([e60d607](https://github.com/mlorentedev/pdf-modifier-mcp/commit/e60d6077f5ec22fe7c39b319d82f1383e8d4b3b0))
+
+
+### Documentation
+
+* **spec:** archive WEB-002 (PR [#121](https://github.com/mlorentedev/pdf-modifier-mcp/issues/121) merged) + pdf.js/grouping lesson ([#123](https://github.com/mlorentedev/pdf-modifier-mcp/issues/123)) ([e97a9be](https://github.com/mlorentedev/pdf-modifier-mcp/commit/e97a9beaac8301670ad4b089646a224d69cb4a5b))
+
 ## [1.7.1](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.7.0...v1.7.1) (2026-06-24)
 
 
