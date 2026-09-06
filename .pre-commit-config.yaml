@@ -39,10 +39,19 @@ repos:
     rev: v8.24.2
     hooks:
       - id: gitleaks
-        # pre-push as well as pre-commit: a secret that slipped in through
-        # `--no-verify` or an amended commit is still caught before it leaves
-        # the machine. Follow-up left open by #126.
-        stages: [pre-commit, pre-push]
+      # Second gitleaks pass at pre-push, over the COMMITS being pushed. The stock
+      # hook's entry is `gitleaks git --pre-commit --staged`, which reads the index;
+      # at pre-push the index is empty, so listing `pre-push` in its stages runs a
+      # scan of nothing and reports clean (CodeRabbit on #130). This one reads the
+      # range pre-commit exposes for the push, so a secret that entered through
+      # `--no-verify` or an amend is caught before it leaves the machine. Follow-up
+      # left open by #126.
+      - id: gitleaks
+        alias: gitleaks-push
+        name: Detect hardcoded secrets (pushed commits)
+        stages: [pre-push]
+        always_run: true
+        entry: bash -c 'exec gitleaks git --redact --verbose --log-opts="${PRE_COMMIT_FROM_REF}..${PRE_COMMIT_TO_REF}" .'
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.6.0
