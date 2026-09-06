@@ -39,6 +39,10 @@ repos:
     rev: v8.24.2
     hooks:
       - id: gitleaks
+        # pre-push as well as pre-commit: a secret that slipped in through
+        # `--no-verify` or an amended commit is still caught before it leaves
+        # the machine. Follow-up left open by #126.
+        stages: [pre-commit, pre-push]
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.6.0
@@ -46,3 +50,12 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
         args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore]
+
+  - repo: local
+    hooks:
+      - id: check-lessons
+        name: Lessons numbering and index
+        entry: scripts/check-lessons.sh
+        language: script
+        pass_filenames: false
+        files: ^docs/lessons/
