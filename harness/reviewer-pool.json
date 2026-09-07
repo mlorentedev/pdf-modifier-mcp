@@ -1,0 +1,61 @@
+{
+  "$comment": [
+    "Reviewer pool for /adversarial-review — the allow-list of models permitted to SIGN a",
+    "review.md, and therefore what `dotf spec archive` accepts as a passing gate. Ported from",
+    "dotfiles/harness/reviewer-pool.json (SSOT of the shape and of these ids) via the ts-bridge",
+    "port; kubelab and ts-bridge are the precedent for carrying a port per repo.",
+    "",
+    "Standing rule inherited from the SSOT: an adversarial review never runs on an Anthropic",
+    "model. The reviewer must not be the implementer, and Claude-class models implement nearly",
+    "every change in this repo — dotfiles BUG-074 was reviewed twice by claude-opus-5 before",
+    "anyone noticed, which is the incident the pool exists to prevent.",
+    "",
+    "Entries are model IDS, not tool names, and `provider`/`model` are pinned explicitly rather",
+    "than parsed out of `id` or inherited from a runner default: pi's own default provider is",
+    "google and its configured default lives in unversioned per-machine state. A pin that",
+    "depends on a default is not a pin.",
+    "",
+    "Reasoning-class only. The latency-optimised daily models are excluded deliberately: a",
+    "reviewer that PASSes cheaply is worse than no gate, because it converts the gate into a",
+    "green checkmark. This file is read once per spec, so slow is fine.",
+    "",
+    "Order is provenance, not precedence — the launcher draws one member at random and",
+    "--reviewer names one deliberately. NaN's concurrency limit is PER MODEL, so a saturation",
+    "on one id is answered by falling through to another, which is why the provider-diverse",
+    "arm sits above the second NaN sibling rather than below it.",
+    "",
+    "Subset of the dotfiles pool (which also carries nan/glm5.3-flash and nan/qwen3.8-flash,",
+    "admitted 2026-08-29): this repo had no port at all (ported 2026-09-06), so it starts from the three members",
+    "kubelab has actually exercised. Adding members here is a decision with the same evidence",
+    "bar as the SSOT — a measured review, not a model name."
+  ],
+  "pool": [
+    {
+      "id": "nan/deepseek-v4-flash",
+      "runner": "pi",
+      "provider": "nan",
+      "model": "deepseek-v4-flash",
+      "secret_id": "NAN_API_KEY",
+      "role": "primary",
+      "why": "1M context and a mandatory reasoning chain. Slow on trivial prompts, which is the correct trade for a gate that runs once per spec. Exercised in the sibling ports: it re-ran a mutation battery itself rather than trusting the spec's table."
+    },
+    {
+      "id": "agy/gemini-3.1-pro-high",
+      "runner": "agy",
+      "model": "gemini-3.1-pro-high",
+      "role": "fallback",
+      "auth": "login",
+      "why": "Provider-diverse: independent of both NaN and Anthropic. Pro tier at high effort; the flash tiers are excluded for the same reason the daily models are. agy has no --provider flag — the model id selects the family. AUTH IS LOGIN, not a key: agy holds an OAuth token and answers with no API key in the environment, so this arm must not be wired to a secret the registry does not declare (dotfiles #1156 found an arm that had never once run for exactly that reason)."
+    },
+    {
+      "id": "nan/mimo-v2.5",
+      "runner": "pi",
+      "provider": "nan",
+      "model": "mimo-v2.5",
+      "secret_id": "NAN_API_KEY",
+      "role": "fallback",
+      "why": "Reasoning-class by profile (1M context, reasoning chain). Admitted in the SSOT on 2026-08-20 with its evidence boundary recorded honestly: a real, correct finding was demonstrated on a planted defect, but no quality ranking against deepseek was established, so this entry is not a claim of equivalence. Second fallback, after the provider-diverse arm, because provider diversity is the stronger property.",
+      "operational_note": "Reasoning models here emit reasoning_content BEFORE content. Under-provisioning max_tokens returns an empty body with finish_reason=length and no error — the same shape as a review that silently did not happen. Provision generously and check finish_reason."
+    }
+  ]
+}

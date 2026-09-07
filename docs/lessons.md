@@ -11,4 +11,4 @@ tags: [pdf-modifier-mcp, lessons, pointer]
 
 > **Notice:** Lessons have been modularized to optimize token consumption and prevent monolithic growth.
 >
-> 👉 **Canonical Index:** [[docs/lessons/_index|Lessons Index]]
+> 👉 **Canonical Index:** [Lessons Index](lessons/_index.md)
