@@ -253,3 +253,108 @@ class TestFontResolverFallback:
     def test_zapfdingbats(self, resolver: FontResolver) -> None:
         props = resolver.resolve("ZapfDingbats")
         assert props.fontname == "ZaDb"
+
+
+class TestFontResolverLiberation:
+    """Liberation fonts are metric-compatible with Arial/Helvetica and Times.
+
+    They appear embedded in many PDFs (``AAAAAA+LiberationSans``). The resolver
+    must map them to the correct Base 14 code *preserving weight/style*, so a
+    faithful replica keeps bold and italic.
+    """
+
+    @pytest.fixture
+    def resolver(self) -> FontResolver:
+        return FontResolver()
+
+    def test_liberation_sans_regular(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("LiberationSans")
+        assert props.fontname == "helv"
+        assert props.is_bold is False
+        assert props.is_italic is False
+
+    def test_liberation_sans_bold(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("LiberationSans-Bold")
+        assert props.fontname == "HeBo"
+        assert props.is_bold is True
+
+    def test_liberation_sans_italic(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("LiberationSans-Italic")
+        assert props.fontname == "helvi"
+        assert props.is_italic is True
+
+    def test_liberation_serif_regular(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("LiberationSerif")
+        assert props.fontname == "TiRo"
+        assert props.is_serif is True
+
+    def test_liberation_serif_italic(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("LiberationSerif-Italic")
+        assert props.fontname == "TiI"
+        assert props.is_italic is True
+        assert props.is_serif is True
+
+
+class TestFontResolverFlagUpgrade:
+    """Bold/italic conveyed via span flags must upgrade the Base 14 code.
+
+    Regression: ``Helvetica`` + ``flags(bold=1)`` used to return ``fontname=
+    "helv"`` while ``is_bold=True``, so the modifier (which uses the fontname)
+    silently dropped the weight. The resolved code must now be the bold variant.
+    """
+
+    @pytest.fixture
+    def resolver(self) -> FontResolver:
+        return FontResolver()
+
+    def test_helvetica_bold_flag(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("Helvetica", font_flags={"bold": 1, "italic": 0})
+        assert props.fontname == "HeBo"
+        assert props.is_bold is True
+
+    def test_arial_bold_flag(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("Arial", font_flags={"bold": 1, "italic": 0})
+        assert props.fontname == "HeBo"
+
+    def test_times_bold_flag(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("TimesNewRoman", font_flags={"bold": 1, "italic": 0})
+        assert props.fontname == "TiBo"
+        assert props.is_bold is True
+
+    def test_arial_italic_flag(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("Arial", font_flags={"bold": 0, "italic": 1})
+        assert props.fontname == "helvi"
+        assert props.is_italic is True
+
+
+class TestFontResolverCommonFamilies:
+    """Common embedded families (DejaVu, Noto, Nimbus) keep family + weight."""
+
+    @pytest.fixture
+    def resolver(self) -> FontResolver:
+        return FontResolver()
+
+    def test_dejavu_serif(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("DejaVuSerif")
+        assert props.fontname == "TiRo"
+        assert props.is_serif is True
+
+    def test_dejavu_sans_mono(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("DejaVuSansMono")
+        assert props.fontname == "Cour"
+        assert props.is_monospaced is True
+
+    def test_dejavu_sans_bold_by_name(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("DejaVuSans-Bold")
+        assert props.fontname == "HeBo"
+        assert props.is_bold is True
+
+    def test_noto_sans_italic_by_name(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("NotoSans-Italic")
+        assert props.fontname == "helvi"
+        assert props.is_italic is True
+
+    def test_nimbus_roman(self, resolver: FontResolver) -> None:
+        props = resolver.resolve("NimbusRoman")
+        assert props.fontname == "TiRo"
+        assert props.is_serif is True
