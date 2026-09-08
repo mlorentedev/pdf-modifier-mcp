@@ -225,7 +225,12 @@ class PDFModifier:
 
     def _save_and_log(self) -> None:
         """Save the modified document and log the result."""
-        self._doc.save(str(self.output_path))  # type: ignore[union-attr]
+        # garbage=4 removes unused objects, dedups, and merges streams so a simple
+        # text replacement does not bloat the file — the default save grew a 67 kB
+        # PDF to ~94 kB, while garbage collection keeps it at the original size.
+        self._doc.save(  # type: ignore[union-attr]
+            str(self.output_path), garbage=4, deflate=True
+        )
         logger.info("Saved %s", self.output_path)
 
     def process(
