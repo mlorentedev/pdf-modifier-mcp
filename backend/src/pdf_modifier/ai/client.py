@@ -43,7 +43,12 @@ class NaNClient:
             base_url or os.environ.get("NAN_BASE_URL") or os.environ.get("OPENAI_BASE_URL")
         )
         if raw_url is None:
-            raw_url = DEFAULT_BASE_URL if nan_key else "https://api.openai.com/v1"
+            if nan_key:
+                raw_url = DEFAULT_BASE_URL
+            elif openai_key:
+                raw_url = "https://api.openai.com/v1"
+            else:
+                raw_url = DEFAULT_BASE_URL
         self._base_url = (raw_url or DEFAULT_BASE_URL).rstrip("/")
         self._is_nan = bool(nan_key)
         self._timeout = timeout
