@@ -43,11 +43,31 @@ jobs:
       - name: Extract version
         id: version
         run: |
+          # The complete tag list is emitted here so the build step consumes a
+          # single multiline output: an empty expansion inside the tags list
+          # yields a bare "image:" line, which buildx rejects as an invalid
+          # reference (measured: the first cut expanded extra_tags to "" on
+          # pull_request and failed with "invalid tag").
+          # Tag push: full semver (1.8.0), partials (1.8, 1) and the commit SHA
+          # for traceability, matching GHCR. Everything else: latest + SHA.
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<EOF"
+              echo "${{ env.IMAGE_BACKEND }}:latest"
+              echo "${{ env.IMAGE_BACKEND }}:$VERSION"
+              echo "${{ env.IMAGE_BACKEND }}:${VERSION%.*}"
+              echo "${{ env.IMAGE_BACKEND }}:${VERSION%%.*}"
+              echo "${{ env.IMAGE_BACKEND }}:sha-${GITHUB_SHA::8}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           else
-            echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<EOF"
+              echo "${{ env.IMAGE_BACKEND }}:latest"
+              echo "${{ env.IMAGE_BACKEND }}:sha-${GITHUB_SHA::8}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Docker Hub
@@ -64,9 +84,7 @@ jobs:
           file: ./backend/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           load: ${{ github.event_name == 'pull_request' }}
-          tags: |
-            ${{ env.IMAGE_BACKEND }}:latest
-            ${{ env.IMAGE_BACKEND }}:${{ steps.version.outputs.version }}
+          tags: ${{ steps.version.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -95,11 +113,31 @@ jobs:
       - name: Extract version
         id: version
         run: |
+          # The complete tag list is emitted here so the build step consumes a
+          # single multiline output: an empty expansion inside the tags list
+          # yields a bare "image:" line, which buildx rejects as an invalid
+          # reference (measured: the first cut expanded extra_tags to "" on
+          # pull_request and failed with "invalid tag").
+          # Tag push: full semver (1.8.0), partials (1.8, 1) and the commit SHA
+          # for traceability, matching GHCR. Everything else: latest + SHA.
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<EOF"
+              echo "${{ env.IMAGE_FRONTEND }}:latest"
+              echo "${{ env.IMAGE_FRONTEND }}:$VERSION"
+              echo "${{ env.IMAGE_FRONTEND }}:${VERSION%.*}"
+              echo "${{ env.IMAGE_FRONTEND }}:${VERSION%%.*}"
+              echo "${{ env.IMAGE_FRONTEND }}:sha-${GITHUB_SHA::8}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           else
-            echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<EOF"
+              echo "${{ env.IMAGE_FRONTEND }}:latest"
+              echo "${{ env.IMAGE_FRONTEND }}:sha-${GITHUB_SHA::8}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Docker Hub
@@ -116,9 +154,7 @@ jobs:
           file: ./frontend/Dockerfile.frontend
           push: ${{ github.event_name != 'pull_request' }}
           load: ${{ github.event_name == 'pull_request' }}
-          tags: |
-            ${{ env.IMAGE_FRONTEND }}:latest
-            ${{ env.IMAGE_FRONTEND }}:${{ steps.version.outputs.version }}
+          tags: ${{ steps.version.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
