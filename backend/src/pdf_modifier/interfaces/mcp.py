@@ -140,6 +140,7 @@ def modify_pdf_content(
     output_path: str,
     replacements: dict[str, str],
     use_regex: bool = False,
+    whole_span: bool = False,
     password: str | None = None,
     pages: str | None = None,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
@@ -223,7 +224,7 @@ def modify_pdf_content(
             pages="1-2"
         )
     """
-    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex, whole_span=whole_span)
 
     page_range: tuple[int, int] | None = None
     if pages:
@@ -334,6 +335,7 @@ def batch_modify_pdf_content(
     output_dir: str,
     replacements: dict[str, str],
     use_regex: bool = False,
+    whole_span: bool = False,
     password: str | None = None,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
 ) -> str:
@@ -362,7 +364,7 @@ def batch_modify_pdf_content(
             {"Draft": "Final", "2024": "2025"}
         )
     """
-    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+    spec = ReplacementSpec(replacements=replacements, use_regex=use_regex, whole_span=whole_span)
     result = batch_process(
         input_paths,
         output_dir,

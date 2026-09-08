@@ -229,3 +229,33 @@ class TestMCPErrorHandling:
         parsed = json.loads(result)
         assert parsed["success"] is False
         assert parsed["error"] == "UNEXPECTED_ERROR"
+
+
+class TestMCPWholeSpan:
+    """MCP tools accept and propagate whole_span (CORE-146)."""
+
+    def test_modify_whole_span_rejects_substring(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "in.pdf", text="24 hours")
+        output_pdf = tmp_path / "output.pdf"
+        result = modify_pdf_content(str(pdf), str(output_pdf), {"24": "X"}, whole_span=True)
+        parsed = json.loads(result)
+        assert parsed["success"] is True
+        assert parsed["replacements_made"] == 0
+
+    def test_modify_whole_span_accepts_exact(self, tmp_path: Path) -> None:
+        """Positive path: an exact-span target still replaces under whole_span."""
+        pdf = create_pdf(tmp_path / "in.pdf", text="24")
+        output_pdf = tmp_path / "output.pdf"
+        result = modify_pdf_content(str(pdf), str(output_pdf), {"24": "25"}, whole_span=True)
+        parsed = json.loads(result)
+        assert parsed["success"] is True
+        assert parsed["replacements_made"] == 1
+
+    def test_batch_whole_span_rejects_substring(self, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "in.pdf", text="24 hours")
+        result = batch_modify_pdf_content(
+            [str(pdf)], str(tmp_path / "out"), {"24": "X"}, whole_span=True
+        )
+        parsed = json.loads(result)
+        assert parsed["failed"] == 0
+        assert all(r["replacements_made"] == 0 for r in parsed["results"])

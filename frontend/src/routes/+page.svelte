@@ -19,6 +19,7 @@
 	let focusTarget = $state<FocusTarget | null>(null);
 	let history = $state<Array<{ replacements: Replacement[] }>>([]);
 	let historyIndex = $state(-1);
+	let wholeSpan = $state(false);
 
 	// Constants
 	const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -160,7 +161,7 @@
 		error = null;
 
 		try {
-			const result = await replaceText(sessionId, validReplacements);
+			const result = await replaceText(sessionId, validReplacements, false, wholeSpan);
 			uploadKey++;
 			showToast(`Applied ${result.replacements_made} replacements`, 'success');
 		} catch (e) {
@@ -329,6 +330,14 @@
 					class="w-full mt-3 py-2 border border-gray-600 rounded hover:bg-gray-700 text-sm">+ Add</button>
 
 				<div class="mt-4 space-y-2">
+					<label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+						<input type="checkbox" bind:checked={wholeSpan} class="accent-blue-600" />
+						Whole-span exact match
+					</label>
+					<p class="text-xs text-gray-500 mb-2">
+						Targets must match the entire text block (prevents short
+						targets like "24" from hitting "24 hours").
+					</p>
 					<button onclick={handleReplace} disabled={processing}
 						class="w-full py-3 bg-blue-600 rounded font-semibold hover:bg-blue-500 disabled:opacity-50">
 						{processing ? 'Applying...' : 'Apply Replacements'}

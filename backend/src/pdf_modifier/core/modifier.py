@@ -354,9 +354,9 @@ class PDFModifier:
             match_found = False
             if spec.use_regex and spec.compiled_patterns:
                 pattern = spec.compiled_patterns[target]
-                if pattern.search(text):
+                if pattern.fullmatch(text) if spec.whole_span else pattern.search(text):
                     match_found = True
-            elif target in text:
+            elif (text == target) if spec.whole_span else (target in text):
                 match_found = True
 
             if match_found:
@@ -440,6 +440,21 @@ class PDFModifier:
     ) -> list[tuple[int, int]]:
         """Find all match positions in merged text."""
         matches: list[tuple[int, int]] = []
+        if spec.whole_span:
+            # Exact-match mode: the merged line text must be the target itself
+            # (equality for literals, fullmatch for regex), not a container of it.
+            stripped = merged.strip()
+            if not stripped:
+                return matches
+            offset = len(merged) - len(merged.lstrip())
+            if spec.use_regex and spec.compiled_patterns:
+                m = spec.compiled_patterns[target].fullmatch(stripped)
+                if m:
+                    matches.append((offset + m.start(), offset + m.end()))
+            elif stripped == target:
+                idx = merged.find(target)
+                matches.append((idx, idx + len(target)))
+            return matches
         if spec.use_regex and spec.compiled_patterns:
             pattern = spec.compiled_patterns[target]
             for m in pattern.finditer(merged):
