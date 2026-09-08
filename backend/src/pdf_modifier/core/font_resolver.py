@@ -11,8 +11,7 @@ class FontResolver:
     """Resolves font properties from PDF spans with enhanced detection.
 
     Combines Base 14 font name mapping with font flag analysis and custom
-    font file resolution. Preserves existing ``_get_font_properties`` behavior
-    as the fallback path.
+    font file resolution.
 
     Example:
         >>> resolver = FontResolver()

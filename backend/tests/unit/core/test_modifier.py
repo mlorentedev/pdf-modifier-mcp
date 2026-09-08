@@ -17,58 +17,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestFontProperties:
-    """Tests for font name mapping."""
-
-    def test_helvetica_default(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("ArialMT")
-        assert code == "helv"
-        assert name == "Helvetica"
-
-    def test_helvetica_bold(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("Arial-BoldMT")
-        assert code == "HeBo"
-        assert name == "Helvetica-Bold"
-
-    def test_courier(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("CourierNew")
-        assert code == "Cour"
-        assert name == "Courier"
-
-    def test_courier_bold(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("CourierNew-Bold")
-        assert code == "CoBo"
-        assert name == "Courier-Bold"
-
-    def test_times(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("TimesNewRomanPSMT")
-        assert code == "TiRo"
-        assert name == "Times-Roman"
-
-    def test_times_bold(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("TimesNewRoman-Bold")
-        assert code == "TiBo"
-        assert name == "Times-Bold"
-
-    def test_serif_maps_to_times(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("DejaVuSerif")
-        assert code == "TiRo"
-        assert name == "Times-Roman"
-
-    def test_unknown_font_defaults_to_helvetica(self) -> None:
-        modifier = PDFModifier("dummy.pdf", "out.pdf")
-        code, name = modifier._get_font_properties("SomeRandomFont")
-        assert code == "helv"
-        assert name == "Helvetica"
-
-
 class TestColorConversion:
     """Tests for color input normalization."""
 

@@ -219,7 +219,7 @@ class TestFontResolverWithCustomFonts:
 
 
 class TestFontResolverFallback:
-    """Tests that FontResolver preserves existing _get_font_properties behavior."""
+    """Tests for the Base 14 fallback mapping in FontResolver.resolve."""
 
     @pytest.fixture
     def resolver(self) -> FontResolver:
