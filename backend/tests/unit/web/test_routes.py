@@ -258,6 +258,19 @@ class TestReplaceWholeSpan:
         assert response.status_code == 200
         assert response.json()["replacements_made"] == 0
 
+    def test_replace_whole_span_accepts_exact(self, app: object, tmp_path: Path) -> None:
+        """Positive path: an exact-span target still replaces under whole_span."""
+        pdf = create_pdf(tmp_path / "replace.pdf", text="24")
+        client = TestClient(app)
+        session_id = self._upload(client, pdf)
+
+        response = client.post(
+            f"/api/pdf/{session_id}/replace",
+            json={"replacements": {"24": "25"}, "whole_span": True},
+        )
+        assert response.status_code == 200
+        assert response.json()["replacements_made"] == 1
+
     def test_replace_whole_span_default_off(self, app: object, tmp_path: Path) -> None:
         pdf = create_pdf(tmp_path / "replace.pdf", text="24 hours")
         client = TestClient(app)
