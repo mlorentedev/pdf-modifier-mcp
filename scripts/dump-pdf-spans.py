@@ -53,7 +53,11 @@ def main(argv: list[str] | None = None) -> int:
         print(__doc__)
         return 2
 
-    out_dir = Path(args[-1]) if len(args) > 1 and args[-1].endswith((".json", ".jsonl")) is False else Path("/tmp/pdf-eval")
+    out_dir = (
+        Path(args[-1])
+        if len(args) > 1 and args[-1].endswith((".json", ".jsonl")) is False
+        else Path("/tmp/pdf-eval")
+    )
     # Heuristic: last arg is the output dir only if it is not a PDF and there
     # are ≥2 args and the first arg(s) are existing files.
     if len(args) >= 2 and Path(args[-1]).suffix != ".pdf":
@@ -62,7 +66,9 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = Path("/tmp/pdf-eval")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    inputs = [Path(a) for a in args if Path(a).is_file() and Path(a).suffix.lower() == ".pdf"]
+    inputs = [
+        Path(a) for a in args if Path(a).is_file() and Path(a).suffix.lower() == ".pdf"
+    ]
     if not inputs:
         print("[ERROR] no PDF files given", file=sys.stderr)
         return 1
