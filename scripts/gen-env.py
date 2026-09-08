@@ -24,9 +24,7 @@ DEFAULT_DEST = REPO_ROOT / "infra" / ".env"
 DEV_OVERRIDES: dict[str, str] = {
     "APP_ENV=": "APP_ENV=development",
     "DEBUG=": "DEBUG=true",
-    "CORS_ORIGINS=": (
-        "CORS_ORIGINS=http://localhost:5173,http://localhost:8080"
-    ),
+    "CORS_ORIGINS=": ("CORS_ORIGINS=http://localhost:5173,http://localhost:8080"),
     "MAX_UPLOAD_SIZE=": "MAX_UPLOAD_SIZE=100MB",
 }
 
@@ -50,7 +48,10 @@ def render_env(example: Path) -> str:
             lines.append(DEV_OVERRIDES.get(f"{key}=", line))
 
     # Safety net: never emit an empty SECRET_KEY, even if the example lacks it.
-    if not any(l.startswith("SECRET_KEY=") and len(l) > len("SECRET_KEY=") for l in lines):
+    if not any(
+        line.startswith("SECRET_KEY=") and len(line) > len("SECRET_KEY=")
+        for line in lines
+    ):
         lines.append(f"SECRET_KEY={secret}")
     return "\n".join(lines) + "\n"
 
