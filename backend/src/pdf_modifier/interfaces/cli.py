@@ -99,6 +99,14 @@ def modify(
             help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
         ),
     ] = None,
+    preserve_metadata: Annotated[
+        bool,
+        typer.Option(
+            "--preserve-metadata/--no-preserve-metadata",
+            help="Preserve the original PDF metadata (creationDate/modDate/producer). "
+            "Default: on. Use --no-preserve-metadata to stamp a fresh modDate.",
+        ),
+    ] = True,
 ) -> None:
     """
     Modify a PDF by finding and replacing text while preserving font style.
@@ -151,6 +159,7 @@ def modify(
             password=password,
             max_file_size=max_file_size,
             custom_fonts=cf,
+            preserve_metadata=preserve_metadata,
         )
 
         with console.status("[bold green]Modifying PDF...", spinner="dots"):
@@ -218,6 +227,13 @@ def batch(
             help="Maximum input PDF size in bytes (default: 100 MB, env: PDF_MOD_MAX_FILE_SIZE)",
         ),
     ] = None,
+    preserve_metadata: Annotated[
+        bool,
+        typer.Option(
+            "--preserve-metadata/--no-preserve-metadata",
+            help="Preserve the original PDF metadata (default: on).",
+        ),
+    ] = True,
 ) -> None:
     """
     Apply the same replacements to multiple PDF files.
@@ -254,6 +270,7 @@ def batch(
                 password=password,
                 max_file_size=max_file_size,
                 custom_fonts=cf,
+                preserve_metadata=preserve_metadata,
             )
 
         table = Table(title="Batch Results")

@@ -11,6 +11,7 @@
 	let uploading = $state(false);
 	let processing = $state(false);
 	let error = $state<string | null>(null);
+	let preserveMetadata = $state(true);
 	let dragOver = $state(false);
 	let uploadKey = $state(0);
 	let highlightText = $state('');
@@ -160,7 +161,7 @@
 		error = null;
 
 		try {
-			const result = await replaceText(sessionId, validReplacements);
+			const result = await replaceText(sessionId, validReplacements, false, preserveMetadata);
 			uploadKey++;
 			showToast(`Applied ${result.replacements_made} replacements`, 'success');
 		} catch (e) {
@@ -327,6 +328,11 @@
 				</div>
 				<button onclick={addReplacement}
 					class="w-full mt-3 py-2 border border-gray-600 rounded hover:bg-gray-700 text-sm">+ Add</button>
+
+				<label class="mt-4 flex items-center gap-2 text-sm text-gray-400">
+					<input type="checkbox" bind:checked={preserveMetadata} class="accent-blue-600" />
+					Preserve original PDF metadata
+				</label>
 
 				<div class="mt-4 space-y-2">
 					<button onclick={handleReplace} disabled={processing}
