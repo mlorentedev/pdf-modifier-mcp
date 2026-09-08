@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.9.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.8.0...v1.9.0) (2026-09-08)
+
+
+### Features
+
+* add consistency reviewer for replacement targets ([#139](https://github.com/mlorentedev/pdf-modifier-mcp/issues/139)) ([7616fb0](https://github.com/mlorentedev/pdf-modifier-mcp/commit/7616fb0c677d598ea19f9735438657d3ef1680ae))
+* **core:** whole-span exact match option to avoid substring collisions ([#151](https://github.com/mlorentedev/pdf-modifier-mcp/issues/151)) ([0d8e723](https://github.com/mlorentedev/pdf-modifier-mcp/commit/0d8e7232c2da996f0042bf71e146b5d1f5209de5))
+
+
+### Bug Fixes
+
+* preserve PDF background and font weight on text replacement ([#136](https://github.com/mlorentedev/pdf-modifier-mcp/issues/136)) ([1f8e947](https://github.com/mlorentedev/pdf-modifier-mcp/commit/1f8e947494e0a190edd03a7836c54a0a72e7e2de))
+
 ## [1.8.0](https://github.com/mlorentedev/pdf-modifier-mcp/compare/v1.7.1...v1.8.0) (2026-08-06)
 
 
