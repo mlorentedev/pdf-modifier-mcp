@@ -50,7 +50,7 @@ jobs:
             # repeated single-line key would overwrite, not append. The empty
             # expansion on non-tag pushes is inert: build-push-action skips
             # empty lines in the tags list.
-            echo "version=$VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "extra_tags<<EOF" >> $GITHUB_OUTPUT
             echo "${MINOR}" >> $GITHUB_OUTPUT
             echo "${MAJOR}" >> $GITHUB_OUTPUT
@@ -113,7 +113,7 @@ jobs:
             # repeated single-line key would overwrite, not append. The empty
             # expansion on non-tag pushes is inert: build-push-action skips
             # empty lines in the tags list.
-            echo "version=$VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "extra_tags<<EOF" >> $GITHUB_OUTPUT
             echo "${MINOR}" >> $GITHUB_OUTPUT
             echo "${MAJOR}" >> $GITHUB_OUTPUT
