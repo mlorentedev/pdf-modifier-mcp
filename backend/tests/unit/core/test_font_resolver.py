@@ -219,7 +219,7 @@ class TestFontResolverWithCustomFonts:
 
 
 class TestFontResolverFallback:
-    """Tests that FontResolver preserves existing _get_font_properties behavior."""
+    """Tests for the Base 14 fallback mapping in FontResolver.resolve."""
 
     @pytest.fixture
     def resolver(self) -> FontResolver:
@@ -242,9 +242,8 @@ class TestFontResolverFallback:
         assert props.fontname == "CoBo"
 
     def test_times_roman(self, resolver: FontResolver) -> None:
-        props = resolver.resolve("TimesNewRoman")
-        # Should resolve to a Times font (TiRo or TiBo depending on detection)
-        assert props.fontname.startswith("Ti")
+        props = resolver.resolve("TimesNewRomanPSMT")
+        assert props.fontname == "TiRo"
 
     def test_times_bold(self, resolver: FontResolver) -> None:
         props = resolver.resolve("Times-Bold")

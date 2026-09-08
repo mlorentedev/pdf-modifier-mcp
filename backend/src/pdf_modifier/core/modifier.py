@@ -55,6 +55,22 @@ class PDFModifier:
         max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
         custom_fonts: dict[str, str] | None = None,
     ) -> None:
+        """Validate paths and prepare the modifier without opening the document.
+
+        The document is opened lazily by :meth:`__enter__` (or ``_open_doc``)
+        so construction is cheap and input errors surface at use time.
+
+        Args:
+            input_path: Path to the source PDF.
+            output_path: Path where the modified PDF is written.
+            password: Optional password for encrypted PDFs.
+            max_file_size: Upload/processing size limit in bytes.
+            custom_fonts: Optional map of alias -> TTF/OTF file path.
+
+        Raises:
+            ValueError: If input and output paths are equal, or a custom
+                font alias points to a missing or non-font file.
+        """
         self.input_path = Path(input_path).absolute()
         self.output_path = Path(output_path).absolute()
         self.password = password
@@ -135,10 +151,12 @@ class PDFModifier:
             raise PDFReadError(f"Cannot open PDF: {e}", {"path": str(self.input_path)}) from e
 
     def __enter__(self) -> PDFModifier:
+        """Open the document and return the modifier for ``with`` usage."""
         self._doc = self._open_doc()
         return self
 
     def __exit__(self, *args: Any) -> None:
+        """Close the document when leaving the ``with`` block."""
         self.close()
 
     def close(self) -> None:
@@ -281,27 +299,6 @@ class PDFModifier:
             pages_modified=len(pages_modified),
             warnings=self._warnings,
         )
-
-    def _get_font_properties(self, font_name: str) -> tuple[str, str]:
-        """
-        Map PDF font names to PyMuPDF Base 14 font codes.
-
-        Returns:
-            Tuple of (font_code for insert_text, font_name for width calculation)
-        """
-        name_lower = font_name.lower()
-
-        if "courier" in name_lower:
-            if "bold" in name_lower:
-                return ("CoBo", "Courier-Bold")
-            return ("Cour", "Courier")
-        elif "times" in name_lower or "serif" in name_lower:
-            if "bold" in name_lower:
-                return ("TiBo", "Times-Bold")
-            return ("TiRo", "Times-Roman")
-        elif "bold" in name_lower:
-            return ("HeBo", "Helvetica-Bold")
-        return ("helv", "Helvetica")
 
     def _convert_color(
         self, color_input: int | list[float] | tuple[float, ...]
