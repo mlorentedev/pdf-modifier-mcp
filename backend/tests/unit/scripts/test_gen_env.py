@@ -19,9 +19,7 @@ while not (REPO_ROOT / "scripts" / "gen-env.py").is_file():
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-_gen_env = importlib.util.spec_from_file_location(
-    "gen_env", REPO_ROOT / "scripts" / "gen-env.py"
-)
+_gen_env = importlib.util.spec_from_file_location("gen_env", REPO_ROOT / "scripts" / "gen-env.py")
 assert _gen_env and _gen_env.loader
 _gen_env_mod = importlib.util.module_from_spec(_gen_env)
 sys.modules["gen_env"] = _gen_env_mod
