@@ -224,3 +224,61 @@ class TestPDFDelete:
         client = TestClient(app)
         response = client.delete("/api/pdf/nonexistent")
         assert response.status_code == 404
+
+
+class TestReplaceWholeSpan:
+    """The replace endpoint accepts and propagates whole_span (CORE-146)."""
+
+    @pytest.fixture
+    def app(self, tmp_path: Path) -> object:
+        import pdf_modifier.web.deps as deps
+
+        deps._settings = WebSettings(storage_dir=str(tmp_path / "storage"))
+        deps._session_mgr = None
+        deps._storage = None
+        return create_app()
+
+    def _upload(self, client: TestClient, pdf: Path) -> str:
+        with open(pdf, "rb") as f:
+            upload_resp = client.post(
+                "/api/pdf/upload",
+                files={"file": ("replace.pdf", f, "application/pdf")},
+            )
+        return upload_resp.json()["session_id"]
+
+    def test_replace_whole_span_rejects_substring(self, app: object, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "replace.pdf", text="24 hours")
+        client = TestClient(app)
+        session_id = self._upload(client, pdf)
+
+        response = client.post(
+            f"/api/pdf/{session_id}/replace",
+            json={"replacements": {"24": "X"}, "whole_span": True},
+        )
+        assert response.status_code == 200
+        assert response.json()["replacements_made"] == 0
+
+    def test_replace_whole_span_accepts_exact(self, app: object, tmp_path: Path) -> None:
+        """Positive path: an exact-span target still replaces under whole_span."""
+        pdf = create_pdf(tmp_path / "replace.pdf", text="24")
+        client = TestClient(app)
+        session_id = self._upload(client, pdf)
+
+        response = client.post(
+            f"/api/pdf/{session_id}/replace",
+            json={"replacements": {"24": "25"}, "whole_span": True},
+        )
+        assert response.status_code == 200
+        assert response.json()["replacements_made"] == 1
+
+    def test_replace_whole_span_default_off(self, app: object, tmp_path: Path) -> None:
+        pdf = create_pdf(tmp_path / "replace.pdf", text="24 hours")
+        client = TestClient(app)
+        session_id = self._upload(client, pdf)
+
+        response = client.post(
+            f"/api/pdf/{session_id}/replace",
+            json={"replacements": {"24": "X"}},
+        )
+        assert response.status_code == 200
+        assert response.json()["replacements_made"] == 1

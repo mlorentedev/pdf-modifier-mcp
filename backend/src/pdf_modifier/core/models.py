@@ -19,6 +19,11 @@ class ReplacementSpec(BaseModel):
         description="Map of 'old text' -> 'new text'. Use 'text|URL' for hyperlinks.",
     )
     use_regex: bool = Field(default=False, description="Treat keys as regex patterns")
+    whole_span: bool = Field(
+        default=False,
+        description="Require targets to match the entire span text "
+        "(equality for literals, fullmatch for regex) instead of a substring",
+    )
     compiled_patterns: dict[str, re.Pattern[str]] | None = Field(
         default=None, description="Pre-compiled regex patterns (internal use)", exclude=True
     )

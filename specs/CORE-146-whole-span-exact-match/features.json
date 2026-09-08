@@ -1,0 +1,30 @@
+[
+  {
+    "id": "CORE-146-whole-span-exact-match-f1",
+    "behavior": "AC1: whole_span=True makes literal target 24 match only spans whose full text is 24, never 24 hours (single-span and cross-span)",
+    "verification": "cd backend && uv run pytest tests/unit/core/test_modifier_whole_span.py -q",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CORE-146-whole-span-exact-match-f2",
+    "behavior": "AC2: default (whole_span=False) behaviour is unchanged; the full existing suite passes unmodified",
+    "verification": "cd backend && uv run pytest tests/unit/core -q",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CORE-146-whole-span-exact-match-f3",
+    "behavior": "AC3: whole_span=True + use_regex=True switches regex matching to fullmatch (pattern 24 does not match 24 hours)",
+    "verification": "cd backend && uv run pytest tests/unit/core/test_modifier_whole_span.py -q -k regex",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CORE-146-whole-span-exact-match-f4",
+    "behavior": "AC4: CLI --whole-span, MCP tool parameter, API body field and Web UI checkbox all accept and propagate the option",
+    "verification": "cd backend && uv run pytest tests/unit -q && cd ../frontend && npm run check && npx vitest run",
+    "state": "pending",
+    "evidence": ""
+  }
+]
