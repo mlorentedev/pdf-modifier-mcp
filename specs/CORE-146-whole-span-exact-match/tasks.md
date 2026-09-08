@@ -13,7 +13,7 @@ created: "2026-09-08"
 
 ## Setup
 
-- [ ] Branch created from master: `feat/CORE-146-whole-span-exact-match`
+- [x] Branch created from master: `feat/CORE-146-whole-span-exact-match`
 - [x] `proposal.md` is complete and acceptance criteria are testable
 - [x] No open questions left in `proposal.md` "Risks / open questions" (`whole_span`+`use_regex` → `fullmatch`, resolved 2026-09-08)
 
@@ -21,28 +21,28 @@ created: "2026-09-08"
 
 > TDD order, one commit per task.
 
-- [ ] [AC2] Regression guard: confirm the existing core suite passes unmodified with the new field defaulted off
-- [ ] [AC1] Write failing tests: `whole_span=True` — target `24` does not match `24 hours`, matches exact span `24` (single-span pass)
-- [ ] [AC1] Implement `whole_span` in `ReplacementSpec` and the literal matching path of `_match_single_span`
-- [ ] [AC3] Write failing test: `whole_span=True` + `use_regex=True` uses `fullmatch` (pattern `24` does not match `24 hours`)
-- [ ] [AC3] Implement `fullmatch` switch in the regex matching path
-- [ ] [AC1] Write failing test: cross-span matching respects `whole_span` (concatenated text must equal the target exactly)
-- [ ] [AC1] Implement `whole_span` in the cross-span comparison
-- [ ] [AC4] Surface the option in CLI (`--whole-span`)
-- [ ] [AC4] Surface the option in MCP (`modify_pdf_content`, `batch_modify_pdf_content`)
-- [ ] [AC4] Surface the option in the web replace API body
-- [ ] [AC4] Add the "Whole-span exact match" checkbox (default off) to the Web UI next to the regex control
-- [ ] Run `mypy`, `ruff`, backend suite, frontend `svelte-check` + vitest
+- [x] [AC2] Regression guard: confirm the existing core suite passes unmodified with the new field defaulted off
+- [x] [AC1] Write failing tests: `whole_span=True` — target `24` does not match `24 hours`, matches exact span `24` (single-span pass)
+- [x] [AC1] Implement `whole_span` in `ReplacementSpec` and the literal matching path of `_match_single_span`
+- [x] [AC3] Write failing test: `whole_span=True` + `use_regex=True` uses `fullmatch` (pattern `24` does not match `24 hours`)
+- [x] [AC3] Implement `fullmatch` switch in the regex matching path
+- [x] [AC1] Write failing test: cross-span matching respects `whole_span` (concatenated text must equal the target exactly)
+- [x] [AC1] Implement `whole_span` in the cross-span comparison
+- [x] [AC4] Surface the option in CLI (`--whole-span`)
+- [x] [AC4] Surface the option in MCP (`modify_pdf_content`, `batch_modify_pdf_content`)
+- [x] [AC4] Surface the option in the web replace API body
+- [x] [AC4] Add the "Whole-span exact match" checkbox (default off) to the Web UI next to the regex control
+- [x] Run `mypy`, `ruff`, backend suite, frontend `svelte-check` + vitest
 
 ## Closing
 
-- [ ] Every acceptance criterion from `proposal.md` is covered by at least one test
-- [ ] Every acceptance criterion has a matching entry in `features.json` (see below) with a non-vacuous verification command
-- [ ] Type checks pass
-- [ ] Lint passes
-- [ ] No unrelated changes in the diff (no scope creep)
-- [ ] `verification.md` filled in
-- [ ] PR opened referencing this spec folder
+- [x] Every acceptance criterion from `proposal.md` is covered by at least one test
+- [x] Every acceptance criterion has a matching entry in `features.json` (see below) with a non-vacuous verification command
+- [x] Type checks pass
+- [x] Lint passes
+- [x] No unrelated changes in the diff (no scope creep)
+- [x] `verification.md` filled in
+- [x] PR opened referencing this spec folder
 
 ## Machine-readable features
 
