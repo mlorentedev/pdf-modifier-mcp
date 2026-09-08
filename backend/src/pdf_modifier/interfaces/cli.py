@@ -73,6 +73,14 @@ def modify(
         bool,
         typer.Option("--regex", help="Treat 'old' values as regex patterns"),
     ] = False,
+    whole_span: Annotated[
+        bool,
+        typer.Option(
+            "--whole-span",
+            help="Match only when the target is the entire span text "
+            "(prevents short targets from hitting longer text)",
+        ),
+    ] = False,
     password: Annotated[
         str | None,
         typer.Option("--password", "-p", help="Password if PDF is encrypted"),
@@ -142,7 +150,7 @@ def modify(
             raise typer.Exit(code=1)
 
     try:
-        spec = ReplacementSpec(replacements=replacements, use_regex=regex)
+        spec = ReplacementSpec(replacements=replacements, use_regex=regex, whole_span=whole_span)
         cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
         max_file_size = max_size or _get_max_file_size()
         modifier = PDFModifier(
@@ -200,6 +208,13 @@ def batch(
         bool,
         typer.Option("--regex", help="Treat 'old' values as regex"),
     ] = False,
+    whole_span: Annotated[
+        bool,
+        typer.Option(
+            "--whole-span",
+            help="Match only when the target is the entire span text",
+        ),
+    ] = False,
     password: Annotated[
         str | None,
         typer.Option("--password", "-p", help="Password if PDFs are encrypted"),
@@ -242,7 +257,7 @@ def batch(
         raise typer.Exit(code=1)
 
     try:
-        spec = ReplacementSpec(replacements=replacements, use_regex=regex)
+        spec = ReplacementSpec(replacements=replacements, use_regex=regex, whole_span=whole_span)
         cf = _parse_custom_fonts(None, custom_fonts) if custom_fonts else None
         max_file_size = max_size or _get_max_file_size()
 

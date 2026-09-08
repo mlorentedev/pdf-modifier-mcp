@@ -137,8 +137,11 @@ async def replace_text(
     try:
         replacements = body.get("replacements", {})
         use_regex = body.get("use_regex", False)
+        whole_span = body.get("whole_span", False)
         pages = body.get("pages")
-        spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
+        spec = ReplacementSpec(
+            replacements=replacements, use_regex=use_regex, whole_span=whole_span
+        )
         modifier = PDFModifier(str(pdf_path), str(output_path))
 
         page_range: tuple[int, int] | None = None
