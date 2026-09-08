@@ -26,6 +26,7 @@ class TaskType(StrEnum):
     RERANK = "rerank"
     TTS = "tts"
     STT = "stt"
+    REVIEW = "review"
 
 
 # Default model mapping (defined after TaskType)
@@ -40,6 +41,7 @@ DEFAULT_ROUTING: dict[TaskType, str] = {
     TaskType.RERANK: "rerank",
     TaskType.TTS: "kokoro",
     TaskType.STT: "whisper",
+    TaskType.REVIEW: "mimo-v2.5",
 }
 
 

@@ -33,9 +33,24 @@ class NaNClient:
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = 3,
     ) -> None:
-        self._api_key = api_key or os.environ.get("NAN_API_KEY", "")
-        raw_url: str | None = base_url or os.environ.get("NAN_BASE_URL")
+        # Accept either NaN Cloud or any OpenAI-compatible provider so the AI
+        # features work for more people. NaN key wins when both are present.
+        nan_key = os.environ.get("NAN_API_KEY")
+        openai_key = os.environ.get("OPENAI_API_KEY")
+        self._api_key = api_key or nan_key or openai_key or ""
+        # Base URL: explicit > NAN_BASE_URL > OPENAI_BASE_URL > provider default.
+        raw_url: str | None = (
+            base_url or os.environ.get("NAN_BASE_URL") or os.environ.get("OPENAI_BASE_URL")
+        )
+        if raw_url is None:
+            if nan_key:
+                raw_url = DEFAULT_BASE_URL
+            elif openai_key:
+                raw_url = "https://api.openai.com/v1"
+            else:
+                raw_url = DEFAULT_BASE_URL
         self._base_url = (raw_url or DEFAULT_BASE_URL).rstrip("/")
+        self._is_nan = bool(nan_key)
         self._timeout = timeout
         self._max_retries = max_retries
         self._client: httpx.AsyncClient | None = None
