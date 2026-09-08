@@ -43,7 +43,19 @@ jobs:
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            MAJOR=${VERSION%%.*}
+            MINOR=${VERSION%.*}
+            # Partial semver (1.8, 1) plus the commit SHA for traceability, as
+            # GHCR already does. Multiline via the EOF-delimited form because a
+            # repeated single-line key would overwrite, not append. The empty
+            # expansion on non-tag pushes is inert: build-push-action skips
+            # empty lines in the tags list.
+            echo "version=$VERSION"
+            echo "extra_tags<<EOF" >> $GITHUB_OUTPUT
+            echo "${MINOR}" >> $GITHUB_OUTPUT
+            echo "${MAJOR}" >> $GITHUB_OUTPUT
+            echo "sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
           fi
@@ -65,6 +77,7 @@ jobs:
           tags: |
             ${{ env.IMAGE_BACKEND }}:latest
             ${{ env.IMAGE_BACKEND }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_BACKEND }}:${{ steps.version.outputs.extra_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -93,7 +106,19 @@ jobs:
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=$(grep -m1 '^version' backend/pyproject.toml | cut -d'"' -f2)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            MAJOR=${VERSION%%.*}
+            MINOR=${VERSION%.*}
+            # Partial semver (1.8, 1) plus the commit SHA for traceability, as
+            # GHCR already does. Multiline via the EOF-delimited form because a
+            # repeated single-line key would overwrite, not append. The empty
+            # expansion on non-tag pushes is inert: build-push-action skips
+            # empty lines in the tags list.
+            echo "version=$VERSION"
+            echo "extra_tags<<EOF" >> $GITHUB_OUTPUT
+            echo "${MINOR}" >> $GITHUB_OUTPUT
+            echo "${MAJOR}" >> $GITHUB_OUTPUT
+            echo "sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           else
             echo "version=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
           fi
@@ -115,6 +140,7 @@ jobs:
           tags: |
             ${{ env.IMAGE_FRONTEND }}:latest
             ${{ env.IMAGE_FRONTEND }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_FRONTEND }}:${{ steps.version.outputs.extra_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
