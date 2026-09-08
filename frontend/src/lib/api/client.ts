@@ -70,7 +70,8 @@ export async function getStructure(sessionId: string): Promise<StructureResponse
 export async function replaceText(
 	sessionId: string,
 	replacements: Replacement[],
-	useRegex = false
+	useRegex = false,
+	preserveMetadata = true
 ): Promise<ReplaceResponse> {
 	const replacementsMap: Record<string, string> = {};
 	for (const r of replacements) {
@@ -82,7 +83,8 @@ export async function replaceText(
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
 			replacements: replacementsMap,
-			use_regex: useRegex
+			use_regex: useRegex,
+			preserve_metadata: preserveMetadata
 		})
 	});
 

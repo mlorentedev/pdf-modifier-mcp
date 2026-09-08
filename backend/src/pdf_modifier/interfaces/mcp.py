@@ -143,6 +143,7 @@ def modify_pdf_content(
     password: str | None = None,
     pages: str | None = None,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+    preserve_metadata: bool = True,
 ) -> str:
     """
     Find and replace text in a PDF while preserving font styles.
@@ -238,6 +239,7 @@ def modify_pdf_content(
         output_path,
         password=password,
         max_file_size=max_file_size,
+        preserve_metadata=preserve_metadata,
     )
     result = modifier.process(spec, pages=page_range)
     return result.model_dump_json(indent=2)
@@ -336,6 +338,7 @@ def batch_modify_pdf_content(
     use_regex: bool = False,
     password: str | None = None,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+    preserve_metadata: bool = True,
 ) -> str:
     """
     Apply the same text replacements to multiple PDF files at once.
@@ -369,6 +372,7 @@ def batch_modify_pdf_content(
         spec,
         password=password,
         max_file_size=max_file_size,
+        preserve_metadata=preserve_metadata,
     )
     return result.model_dump_json(indent=2)
 

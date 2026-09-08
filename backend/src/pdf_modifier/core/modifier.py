@@ -54,6 +54,7 @@ class PDFModifier:
         password: str | None = None,
         max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
         custom_fonts: dict[str, str] | None = None,
+        preserve_metadata: bool = True,
     ) -> None:
         self.input_path = Path(input_path).absolute()
         self.output_path = Path(output_path).absolute()
@@ -61,6 +62,8 @@ class PDFModifier:
         self.max_file_size = max_file_size
         self._custom_fonts = self._validate_custom_fonts(custom_fonts or {})
         self._font_resolver = FontResolver()
+        self.preserve_metadata = preserve_metadata
+        self._original_metadata: dict[str, str] | None = None
 
         if self.input_path == self.output_path:
             raise ValueError("Input and output paths cannot be the same. Risk of file corruption.")
@@ -128,6 +131,7 @@ class PDFModifier:
                     raise PDFPasswordError("PDF is password protected. Please provide a password.")
                 if not doc.authenticate(self.password):
                     raise PDFPasswordError("Incorrect password provided for the PDF.")
+            self._original_metadata = self._extract_metadata(doc)
             return doc
         except PDFPasswordError:
             raise
@@ -223,11 +227,42 @@ class PDFModifier:
 
         return total, pages_modified
 
+    @staticmethod
+    def _extract_metadata(doc: fitz.Document) -> dict[str, str]:
+        """Collect the writable metadata fields (exclude format/encryption)."""
+        md: dict[str, str] = {}
+        for key, value in dict(doc.metadata).items():
+            if key in ("format", "encryption"):
+                continue
+            if isinstance(value, str):
+                md[key] = value
+        return md
+
+    def _restore_metadata(self) -> None:
+        """Preserve the original metadata, or stamp a fresh ``modDate`` if opted out.
+
+        ``apply_redactions``/``save`` may rewrite the Info dictionary; a faithful
+        replica keeps creationDate/modDate/producer untouched unless the caller
+        explicitly opts out (``preserve_metadata=False``), in which case a fresh
+        ``modDate`` marks the edit.
+        """
+        doc = self._doc
+        if doc is None:
+            return
+        if self.preserve_metadata:
+            if self._original_metadata is not None:
+                doc.set_metadata(self._original_metadata)
+        else:
+            md = self._extract_metadata(doc)
+            md["modDate"] = fitz.get_pdf_now()
+            doc.set_metadata(md)
+
     def _save_and_log(self) -> None:
         """Save the modified document and log the result."""
-        # garbage=4 removes unused objects, dedups, and merges streams so a simple
-        # text replacement does not bloat the file — the default save grew a 67 kB
-        # PDF to ~94 kB, while garbage collection keeps it at the original size.
+        self._restore_metadata()
+        # garbage=4 removes unused objects, dedups, and merges streams so a
+        # simple text replacement does not bloat the file (a plain save grew a
+        # 67 kB PDF to ~94 kB; garbage collection keeps it at the original size).
         self._doc.save(  # type: ignore[union-attr]
             str(self.output_path), garbage=4, deflate=True
         )
@@ -606,6 +641,7 @@ def batch_process(
     password: str | None = None,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE_BYTES,
     custom_fonts: dict[str, str] | None = None,
+    preserve_metadata: bool = True,
 ) -> BatchResult:
     """
     Apply the same replacements to multiple PDF files.
@@ -645,6 +681,7 @@ def batch_process(
                 password=password,
                 max_file_size=max_file_size,
                 custom_fonts=custom_fonts,
+                preserve_metadata=preserve_metadata,
             )
             result = modifier.process(spec)
             results.append(result)

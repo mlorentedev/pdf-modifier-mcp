@@ -138,8 +138,9 @@ async def replace_text(
         replacements = body.get("replacements", {})
         use_regex = body.get("use_regex", False)
         pages = body.get("pages")
+        preserve_metadata = body.get("preserve_metadata", True)
         spec = ReplacementSpec(replacements=replacements, use_regex=use_regex)
-        modifier = PDFModifier(str(pdf_path), str(output_path))
+        modifier = PDFModifier(str(pdf_path), str(output_path), preserve_metadata=preserve_metadata)
 
         page_range: tuple[int, int] | None = None
         if pages:
