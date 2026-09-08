@@ -450,6 +450,67 @@ def links(
         raise typer.Exit(code=1) from None
 
 
+@app.command()
+def verify(
+    values: Annotated[
+        Path,
+        typer.Argument(help="Path to a JSON file of the target values to check"),
+    ],
+    ai: Annotated[
+        bool,
+        typer.Option(
+            "--ai", help="Also run the optional AI consistency reviewer (needs an API key)."
+        ),
+    ] = False,
+) -> None:
+    """
+    Validate a set of target replacement values for internal consistency.
+
+    Runs deterministic checks (math, calendar, rate) and, with --ai, an optional
+    AI reviewer when an API key is configured. Exits non-zero if any issue is found.
+
+    Example:
+        pdf-mod verify values.json
+        pdf-mod verify values.json --ai
+    """
+    import json
+
+    from pdf_modifier.core.consistency import ConsistencyValidator
+
+    try:
+        data: dict[str, object] = json.loads(Path(values).read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        console.print(f"[red]Error:[/] Could not read JSON: {exc}")
+        raise typer.Exit(code=1) from None
+
+    result = ConsistencyValidator().validate(data)
+    if result.success:
+        console.print("[green]Consistent: no issues found.\n")
+    else:
+        for issue in result.issues:
+            console.print(f"[red]{issue.severity}[/] {issue.field}: {issue.message}")
+        console.print()
+
+    if ai:
+        import asyncio
+
+        from pdf_modifier.ai.reviewer import AIReviewer
+
+        review = asyncio.run(AIReviewer().review(data, result.checked))
+        if review.skipped:
+            console.print("[yellow]AI reviewer skipped: no API key configured.\n")
+        elif review.error:
+            console.print(f"[yellow]AI reviewer error:[/] {review.error}\n")
+        else:
+            for finding in review.findings:
+                console.print(f"[bold]{finding.severity}[/] {finding.field}: {finding.message}")
+            if not review.findings:
+                console.print("[green]AI reviewer found no additional issues.\n")
+
+    if not result.success:
+        raise typer.Exit(code=1)
+
+
 def main() -> None:
     """Entry point for CLI."""
     app()

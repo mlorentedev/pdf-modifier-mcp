@@ -154,13 +154,21 @@ class PDFModifier:
     ) -> int:
         """Apply replacements to a single page. Returns count of replacements."""
         for item in items:
+            # fill=None (not white): removing the text glyphs must not paint a
+            # box over the underlying PDF content (e.g. a colored invoice band),
+            # otherwise the replaced field shows a white rectangle instead of
+            # preserving the page background.
             if "bboxes" in item:
                 for bbox in item["bboxes"]:
-                    page.add_redact_annot(bbox, fill=(1, 1, 1))
+                    page.add_redact_annot(bbox, fill=None)
             else:
-                page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
+                page.add_redact_annot(item["bbox"], fill=None)
 
-        page.apply_redactions()
+        # Remove the redacted *text* but preserve the surrounding content.
+        # fill=None avoids painting a foreign color (the old white fill hid the
+        # underlying vector band), and PDF_REDACT_IMAGE_NONE stops the default
+        # image masking from carving a hole where text sat on an image.
+        page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
 
         for item in items:
             self._insert_replacement(page, item)
@@ -217,7 +225,12 @@ class PDFModifier:
 
     def _save_and_log(self) -> None:
         """Save the modified document and log the result."""
-        self._doc.save(str(self.output_path))  # type: ignore[union-attr]
+        # garbage=4 removes unused objects, dedups, and merges streams so a simple
+        # text replacement does not bloat the file — the default save grew a 67 kB
+        # PDF to ~94 kB, while garbage collection keeps it at the original size.
+        self._doc.save(  # type: ignore[union-attr]
+            str(self.output_path), garbage=4, deflate=True
+        )
         logger.info("Saved %s", self.output_path)
 
     def process(
