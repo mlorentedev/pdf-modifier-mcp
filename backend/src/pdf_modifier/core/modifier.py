@@ -154,13 +154,21 @@ class PDFModifier:
     ) -> int:
         """Apply replacements to a single page. Returns count of replacements."""
         for item in items:
+            # fill=None (not white): removing the text glyphs must not paint a
+            # box over the underlying PDF content (e.g. a colored invoice band),
+            # otherwise the replaced field shows a white rectangle instead of
+            # preserving the page background.
             if "bboxes" in item:
                 for bbox in item["bboxes"]:
-                    page.add_redact_annot(bbox, fill=(1, 1, 1))
+                    page.add_redact_annot(bbox, fill=None)
             else:
-                page.add_redact_annot(item["bbox"], fill=(1, 1, 1))
+                page.add_redact_annot(item["bbox"], fill=None)
 
-        page.apply_redactions()
+        # Remove the redacted *text* but preserve the surrounding content.
+        # fill=None avoids painting a foreign color (the old white fill hid the
+        # underlying vector band), and PDF_REDACT_IMAGE_NONE stops the default
+        # image masking from carving a hole where text sat on an image.
+        page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
 
         for item in items:
             self._insert_replacement(page, item)
