@@ -31,7 +31,7 @@
 		"tailwindcss": "^4.3.1",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.16",
-		"vitest": "^4.1.9"
+		"vitest": "^5.0.1"
 	},
 	"dependencies": {
 		"pdfjs-dist": "^6.2.108"
