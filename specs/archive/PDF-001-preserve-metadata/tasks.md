@@ -13,9 +13,9 @@ created: "2026-09-07"
 
 ## Setup
 
-- [ ] Branch created from main: `feat/PDF-001-preserve-metadata`
-- [ ] `proposal.md` is complete and acceptance criteria are testable
-- [ ] No open questions left in `proposal.md` "Risks / open questions"
+- [x] Branch created from main: `feat/preserve-pdf-metadata` (feature merged via #138)
+- [x] `proposal.md` is complete and acceptance criteria are testable
+- [x] No open questions left in `proposal.md` "Risks / open questions"
 
 ## Implementation
 
@@ -34,13 +34,15 @@ created: "2026-09-07"
 
 ## Closing
 
-- [ ] Every acceptance criterion from `proposal.md` is covered by at least one test
-- [ ] Every acceptance criterion has a matching entry in `features.json` (see below) with a non-vacuous verification command
-- [ ] Type checks pass
-- [ ] Lint passes
-- [ ] No unrelated changes in the diff (no scope creep)
-- [ ] `verification.md` filled in
-- [ ] PR opened referencing this spec folder
+> Closing entries reconciled retroactively (2026-09-22) against the evidence recorded in `verification.md`; the work itself predates this landing (merged via #138).
+
+- [x] Every acceptance criterion from `proposal.md` is covered by at least one test (AC1/AC2/AC4 executably; AC3 via CLI/MCP tests — web/UI wiring inspection-verified, see verification.md coverage note)
+- [x] Every acceptance criterion has a matching entry in `features.json` (see below) with a non-vacuous verification command
+- [x] Type checks pass
+- [x] Lint passes
+- [x] No unrelated changes in the diff (no scope creep)
+- [x] `verification.md` filled in
+- [x] PR opened referencing this spec folder (#159)
 
 ## Machine-readable features
 

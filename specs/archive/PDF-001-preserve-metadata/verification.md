@@ -11,7 +11,7 @@ Every acceptance criterion mapped to concrete proof.
 
 - [x] **AC1** -> `test_modifier_metadata.py::test_metadata_preserved_by_default` (+ `test_creation_and_mod_date_preserved`), commit `77e172f`. Also confirmed end-to-end via CLI on a real PDF: `creationDate`/`modDate`/`producer`/`title` byte-identical after replacement.
 - [x] **AC2** -> `test_modifier_metadata.py::test_disable_allows_mod_date_change`. CLI `--no-preserve-metadata` on a real PDF updated `modDate` to `D:20260907192259-06'00'` while keeping `creationDate`.
-- [x] **AC3** -> `tests/unit/interfaces/test_cli.py::TestModifyCommand` (flag parsed); MCP `modify_pdf_content`/`batch_modify_pdf_content` signatures updated; web `routes/pdf.py` reads `preserve_metadata`; UI checkbox in `+page.svelte` (bound `preserveMetadata`, default `true`) with `client.ts` sending `preserve_metadata`.
+- [x] **AC3** -> `tests/unit/interfaces/test_cli.py::TestModifyCommand` (flag parsed); MCP `modify_pdf_content`/`batch_modify_pdf_content` signatures updated; web `routes/pdf.py` reads `preserve_metadata`; UI checkbox in `+page.svelte` (bound `preserveMetadata`, default `true`) with `client.ts` sending `preserve_metadata`. **Coverage note:** the web replace API and Web UI checkbox have no executable tests (backend `test_routes.py` and the frontend suites do not exercise `preserve_metadata`); those two surfaces were verified by code inspection plus the end-to-end CLI smoke below.
 - [x] **AC4** -> preserve tests assert `creationDate`/`modDate`/`producer`/`title`/`creator` are non-empty and unchanged.
 
 ## Test status
@@ -30,13 +30,15 @@ Every acceptance criterion mapped to concrete proof.
 
 ## Promotion candidates
 
-- [x] Lesson for the repo's `docs/lessons/`? **yes** — "PyMuPDF preserves PDF metadata on save; make it an explicit option with an opt-out that stamps `modDate`." (register as the next lesson NNN).
+- [x] Lesson for the repo's `docs/lessons/`? **yes** — "PyMuPDF preserves PDF metadata on save; make it an explicit option with an opt-out that stamps `modDate`." Registered as lesson-016 during the retroactive landing (2026-09-22).
 - [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no — small additive option; the spec documents it.
 - [ ] New pattern candidate for `00_meta/patterns/`? no — repo-specific.
 
 ## Archive checklist
 
-- [ ] `proposal.md` frontmatter set to `status: archived`
-- [ ] Folder moved: `specs/PDF-001-preserve-metadata/` -> `specs/archive/PDF-001-preserve-metadata/`
-- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
-- [ ] Promotions above executed (if any) — register the lesson if kept
+> Reconciled retroactively on 2026-09-22 when these artifacts were rescued from the discarded feature branch (see the retroactive note in `proposal.md`).
+
+- [x] `proposal.md` frontmatter set to `status: archived`
+- [x] Folder moved: `specs/PDF-001-preserve-metadata/` -> `specs/archive/PDF-001-preserve-metadata/` (landed directly in `archive/` on rescue)
+- [x] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018) — issue #137 closed 2026-09-22
+- [x] Promotions above executed (if any) — lesson registered as `docs/lessons/lesson-016-*`

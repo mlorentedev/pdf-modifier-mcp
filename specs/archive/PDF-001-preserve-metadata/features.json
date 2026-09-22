@@ -18,7 +18,7 @@
     "behavior": "The option is surfaced in CLI, MCP tools, the web replace API, and a Web UI checkbox (default on).",
     "verification": "cd backend && .venv/bin/python -m pytest tests/unit/interfaces/test_cli.py tests/unit/interfaces/test_mcp.py -q",
     "state": "pending",
-    "evidence": "passed"
+    "evidence": "passed; web API + Web UI wiring verified by code inspection only (routes/pdf.py reads the field; +page.svelte checkbox defaults true; client.ts sends it) — no executable web/UI test existed at merge time (gap noted in verification.md AC3)"
   },
   {
     "id": "PDF-001-preserve-metadata-f4",
