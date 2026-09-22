@@ -43,10 +43,12 @@ When `preserve_metadata` is false, only `modDate` is stamped with the current ti
 
 ## Acceptance criteria
 
-- [ ] **AC1** By default, replacing text preserves the original `creationDate`, `modDate`, and `producer` exactly.
-- [ ] **AC2** With `preserve_metadata=False`, `modDate` is updated to the current time while `creationDate` is preserved.
-- [ ] **AC3** The flag is surfaced in the CLI, MCP tools, web replace API, and Web UI (checkbox default on).
-- [ ] **AC4** None of the standard metadata fields are dropped or emptied after a save.
+- [x] **AC1** By default, replacing text preserves the original `creationDate`, `modDate`, and `producer` exactly.
+- [x] **AC2** With `preserve_metadata=False`, `modDate` is updated to the current time while `creationDate` is preserved.
+- [x] **AC3** The flag is surfaced in the CLI, MCP tools, web replace API, and Web UI (checkbox default on).
+- [x] **AC4** None of the standard metadata fields are dropped or emptied after a save.
+
+> All four verified — see `verification.md` Evidence (AC3's web API / Web UI wiring is inspection-verified; no executable test existed at merge time).
 
 ## References
 
