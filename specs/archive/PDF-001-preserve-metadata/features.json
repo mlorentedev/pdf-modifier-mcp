@@ -1,0 +1,30 @@
+[
+  {
+    "id": "PDF-001-preserve-metadata-f1",
+    "behavior": "By default, replacing text preserves the original creationDate/modDate/producer exactly.",
+    "verification": "cd backend && .venv/bin/python -m pytest tests/unit/core/test_modifier_metadata.py::TestModifierMetadataPreservation::test_metadata_preserved_by_default",
+    "state": "pending",
+    "evidence": "passed"
+  },
+  {
+    "id": "PDF-001-preserve-metadata-f2",
+    "behavior": "With preserve_metadata=False, modDate is updated to the current time while creationDate is preserved.",
+    "verification": "cd backend && .venv/bin/python -m pytest tests/unit/core/test_modifier_metadata.py::TestModifierMetadataPreservation::test_disable_allows_mod_date_change",
+    "state": "pending",
+    "evidence": "passed"
+  },
+  {
+    "id": "PDF-001-preserve-metadata-f3",
+    "behavior": "The option is surfaced in CLI, MCP tools, the web replace API, and a Web UI checkbox (default on).",
+    "verification": "cd backend && .venv/bin/python -m pytest tests/unit/interfaces/test_cli.py tests/unit/interfaces/test_mcp.py -q",
+    "state": "pending",
+    "evidence": "passed"
+  },
+  {
+    "id": "PDF-001-preserve-metadata-f4",
+    "behavior": "No standard metadata field is dropped or emptied after a save.",
+    "verification": "cd backend && .venv/bin/python -m pytest tests/unit/core/test_modifier_metadata.py::TestModifierMetadataPreservation::test_creation_and_mod_date_preserved",
+    "state": "pending",
+    "evidence": "passed"
+  }
+]
