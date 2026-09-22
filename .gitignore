@@ -60,3 +60,6 @@ backend/tests/examples_output/
 site/node_modules/
 site/dist/
 site/.astro/
+specs/archive/*/review-transcript.jsonl
+specs/archive/*/review-request.json
+specs/archive/*/review-transcript.jsonl.stderr
