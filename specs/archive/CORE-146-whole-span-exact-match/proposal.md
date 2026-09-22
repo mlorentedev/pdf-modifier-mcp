@@ -1,7 +1,7 @@
 ---
 id: "CORE-146-whole-span-exact-match"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-09-07"
 issue: "mlorentedev/pdf-modifier-mcp#146"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal]
@@ -66,3 +66,5 @@ destroys neighbouring text and the user only notices in the output PDF.
 - Bitácora board: `mlorentedev/pdf-modifier-mcp#146`
 - Related patterns: `00_meta/patterns/pattern-testing-standards.md` (TDD), `00_meta/patterns/pattern-spec-driven-development.md`
 - Sister spec: `specs/PDF-001-preserve-metadata/` (same core + surfaces propagation shape)
+
+<!-- archived 2026-09-08 — PR: https://github.com/mlorentedev/pdf-modifier-mcp/pull/151 -->
