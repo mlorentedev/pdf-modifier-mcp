@@ -28,9 +28,18 @@ jobs:
         id: check-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
-          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          # The package lives at path "backend", so release-please-action names its
+          # outputs with that prefix. The unprefixed release_created is only set for
+          # a root (".") package and stayed empty here, which silently skipped every
+          # publish job from v1.7.0 to v1.9.0.
+          RELEASE_CREATED: ${{ steps.release.outputs['backend--release_created'] }}
+          TAG_NAME: ${{ steps.release.outputs['backend--tag_name'] }}
+          RELEASES_CREATED: ${{ steps.release.outputs.releases_created }}
         run: |
+          if [ "$RELEASES_CREATED" = "true" ] && [ "$RELEASE_CREATED" != "true" ]; then
+            echo "::error::release-please created a release but the backend outputs are empty; publish jobs would be skipped"
+            exit 1
+          fi
           echo "release_created=$RELEASE_CREATED" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
