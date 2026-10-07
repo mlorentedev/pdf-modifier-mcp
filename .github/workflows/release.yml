@@ -35,9 +35,16 @@ jobs:
           RELEASE_CREATED: ${{ steps.release.outputs['backend--release_created'] }}
           TAG_NAME: ${{ steps.release.outputs['backend--tag_name'] }}
           RELEASES_CREATED: ${{ steps.release.outputs.releases_created }}
+          PATHS_RELEASED: ${{ steps.release.outputs.paths_released }}
         run: |
-          if [ "$RELEASES_CREATED" = "true" ] && [ "$RELEASE_CREATED" != "true" ]; then
-            echo "::error::release-please created a release but the backend outputs are empty; publish jobs would be skipped"
+          # Fail closed: an output the gate depends on going missing must turn the
+          # run red, never skip the publish jobs.
+          case "$RELEASES_CREATED" in
+            true|false) ;;
+            *) echo "::error::release-please-action no longer sets releases_created; check its outputs"; exit 1 ;;
+          esac
+          if printf '%s' "$PATHS_RELEASED" | grep -q '"backend"' && [ "$RELEASE_CREATED" != "true" ]; then
+            echo "::error::release-please released backend but backend--release_created is empty; publish jobs would be skipped"
             exit 1
           fi
           echo "release_created=$RELEASE_CREATED" >> "$GITHUB_OUTPUT"
