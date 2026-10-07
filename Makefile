@@ -79,6 +79,7 @@ env: ## Generate $(ENV_FILE) from $(ENV_EXAMPLE) (idempotent; FORCE=1 to regener
 setup: ## Install deps (TARGET: all|backend|frontend)
 ifeq ($(TARGET),frontend)
 	cd frontend && npm install
+	$(MAKE) --no-print-directory pdf-worker
 	@echo "[OK] Frontend ready"
 else ifeq ($(TARGET),backend)
 	cd backend && $(UV) sync --all-extras
@@ -86,8 +87,16 @@ else ifeq ($(TARGET),backend)
 else
 	cd backend && $(UV) sync --all-extras
 	cd frontend && npm install
+	$(MAKE) --no-print-directory pdf-worker
 	@echo "[OK] All deps ready"
 endif
+
+# pdf.js loads its worker from /pdf.worker.min.mjs (PdfPreview.svelte). The file
+# is gitignored and must match the installed pdfjs-dist, so it is re-copied from
+# node_modules on every setup and dev run. The Docker image copies it at build.
+.PHONY: pdf-worker
+pdf-worker:
+	cp frontend/node_modules/pdfjs-dist/build/pdf.worker.min.mjs frontend/static/
 
 # =============================================================================
 # Run
@@ -101,6 +110,7 @@ else ifeq ($(TARGET),mcp)
 else ifeq ($(TARGET),cli)
 	cd backend && $(UV) run pdf-mod $(ARGS)
 else ifeq ($(TARGET),frontend)
+	$(MAKE) --no-print-directory pdf-worker
 	cd frontend && npm run dev
 else
 	@echo "Usage: make run TARGET=api|mcp|cli|frontend"

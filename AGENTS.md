@@ -52,7 +52,7 @@ frontend/src/                # SvelteKit 5 + pdf.js UI
 backend/specs/               # Spec-Driven Development artifacts (+ archive/)
 backend/tests/               # pytest suite
 frontend/e2e/                # Playwright end-to-end suite
-docs/                        # adr/ · troubleshooting/ · lessons.md
+docs/                        # adr/ · lessons/ · runbooks/ · troubleshooting/
 infra/                       # compose.{base,dev,prod}.yml · nginx.conf
 scripts/                     # dump-pdf-spans.py · eval-grouping.ts · gen-env.py · safe-gh-pr
 site/                        # Astro + Starlight docs site
