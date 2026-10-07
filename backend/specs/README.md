@@ -9,14 +9,17 @@ This directory contains the complete specification for evolving PDF Modifier MCP
 
 ## Specs
 
+> Status as of 2026-10-06. Archived specs live in [`archive/`](archive/).
+
 | ID | Feature | Phase | Status | Effort |
 |---|---|---|---|---|
-| [WEB-001](WEB-001-web-ui/) | Web UI for PDF editing | 1 | ACTIVE | ~12 days |
-| [AI-001](AI-001-detection/) | AI-powered document detection | 2 | ACTIVE | ~6.5 days |
-| [VIS-001](VIS-001-vision/) | Vision and OCR capabilities | 3 | ACTIVE | ~4.5 days |
-| [ML-001](ML-001-multilingual/) | Multilingual and semantic | 4 | ACTIVE | ~5.5 days |
-| [AUD-001](AUD-001-audio/) | Audio (TTS/STT) | 5 | ACTIVE | ~5 days |
-| [INFRA-001](INFRA-001-docker/) | Docker infrastructure | Parallel | ACTIVE | ~5 days |
+| [WEB-001](WEB-001-web-ui/) | Web UI for PDF editing | 1 | SHIPPED, archive pending (#169) | ~12 days |
+| [AI-001](AI-001-detection/) | AI-powered document detection | 2 | SHIPPED, archive pending (#169) | ~6.5 days |
+| [VIS-001](VIS-001-vision/) | Vision and OCR capabilities | 3 | NOT STARTED (#73) | ~4.5 days |
+| [ML-001](ML-001-multilingual/) | Multilingual and semantic | 4 | NOT STARTED (#74) | ~5.5 days |
+| [AUD-001](AUD-001-audio/) | Audio (TTS/STT) | 5 | NOT STARTED (#75) | ~5 days |
+| [INFRA-001](INFRA-001-docker/) | Docker infrastructure | Parallel | SHIPPED, archive pending (#169) | ~5 days |
+| [FONT-001](FONT-001-custom-fonts/) | Custom fonts & font resolver | — | SHIPPED, archive pending (#169) | — |
 
 **Total estimated effort: ~38.5 days (~8 weeks)**
 
