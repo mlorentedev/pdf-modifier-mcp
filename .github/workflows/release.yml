@@ -43,7 +43,11 @@ jobs:
             true|false) ;;
             *) echo "::error::release-please-action no longer sets releases_created; check its outputs"; exit 1 ;;
           esac
-          if printf '%s' "$PATHS_RELEASED" | grep -q '"backend"' && [ "$RELEASE_CREATED" != "true" ]; then
+          # Exact element match on a JSON array; jq exits non-zero on anything else.
+          if ! backend_released=$(printf '%s' "$PATHS_RELEASED" | jq -e 'type == "array" and any(.[]; . == "backend")'); then
+            [ "$backend_released" = "false" ] || { echo "::error::paths_released is not a JSON array: '$PATHS_RELEASED'"; exit 1; }
+          fi
+          if [ "$backend_released" = "true" ] && [ "$RELEASE_CREATED" != "true" ]; then
             echo "::error::release-please released backend but backend--release_created is empty; publish jobs would be skipped"
             exit 1
           fi
