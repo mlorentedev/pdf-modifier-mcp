@@ -28,9 +28,32 @@ jobs:
         id: check-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
-          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          # The package lives at path "backend", so release-please-action names its
+          # outputs with that prefix. The unprefixed release_created is only set for
+          # a root (".") package and stayed empty here, which silently skipped every
+          # publish job from v1.7.0 to v1.9.0.
+          RELEASE_CREATED: ${{ steps.release.outputs['backend--release_created'] }}
+          TAG_NAME: ${{ steps.release.outputs['backend--tag_name'] }}
+          RELEASES_CREATED: ${{ steps.release.outputs.releases_created }}
+          PATHS_RELEASED: ${{ steps.release.outputs.paths_released }}
         run: |
+          # Fail closed: when a release exists, it must be the backend one with both
+          # backend outputs set. A renamed output or a moved package path turns the
+          # run red instead of skipping the publish jobs.
+          case "$RELEASES_CREATED" in
+            true|false) ;;
+            *) echo "::error::release-please-action no longer sets releases_created; check its outputs"; exit 1 ;;
+          esac
+          if [ "$RELEASES_CREATED" = "true" ]; then
+            if ! printf '%s' "$PATHS_RELEASED" | jq -e 'type == "array" and any(.[]; . == "backend")' >/dev/null; then
+              echo "::error::release created for paths_released='$PATHS_RELEASED', but this workflow only publishes path backend"
+              exit 1
+            fi
+            if [ "$RELEASE_CREATED" != "true" ] || [ -z "$TAG_NAME" ]; then
+              echo "::error::backend was released but backend--release_created/backend--tag_name are empty; publish jobs would be skipped"
+              exit 1
+            fi
+          fi
           echo "release_created=$RELEASE_CREATED" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
